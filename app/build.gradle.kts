@@ -21,6 +21,17 @@ android {
         testInstrumentationRunner = "io.github.valentinaschiavon99.megyejatek.HiltTestRunner"
     }
 
+    signingConfigs {
+        // Shared, public debug key: every machine and every CI build signs debug APKs the same way,
+        // so a newer build installs over an older one without uninstalling. Never use it for release.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true

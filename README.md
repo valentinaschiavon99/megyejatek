@@ -4,6 +4,12 @@ An offline Android quiz about Hungary's 19 counties and Budapest: find counties,
 
 Written from scratch in Kotlin with Jetpack Compose. Map and city data come from open sources (see [DATA_SOURCES.md](DATA_SOURCES.md)).
 
+## Install the latest build
+
+Every push to `main` is built by GitHub Actions. Download the debug APK on your phone and open it:
+[megyejatek-debug.apk](https://github.com/valentinaschiavon99/megyejatek/releases/download/latest/megyejatek-debug.apk)
+(Android asks once to allow installs from your browser.)
+
 ## Build
 
 Requirements: Android Studio (latest stable) or JDK 17+ with the Android SDK, platform 37 installed.
