@@ -10,6 +10,7 @@ import org.junit.Rule
 import org.junit.Test
 
 @HiltAndroidTest
+/** Runs against a build without google-services.json, where no login is required. */
 class NavigationSmokeTest {
     @get:Rule(order = 0) val hilt = HiltAndroidRule(this)
     @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
@@ -24,6 +25,6 @@ class NavigationSmokeTest {
         compose.onNodeWithText("Tanulj, mielőtt játszol: hamarosan.").assertExists()
 
         compose.onNodeWithText("Eredmények").performClick()
-        compose.onNodeWithText("Még nincs eredmény.").assertExists()
+        compose.onNodeWithText("Saját rekordjaim").assertExists()
     }
 }

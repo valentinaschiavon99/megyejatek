@@ -42,6 +42,56 @@
     <string name="result_correct">Eltalált: %1$d / %2$d</string>
     <string name="result_time_bonus">Időbónusz: +%1$d</string>
     <string name="result_hints">Súgások: %1$d</string>
+    <!-- Accounts -->
+    <string name="auth_subtitle">Jelentkezz be, hogy a rekordjaid felkerüljenek a globális ranglistára. Játszani internet nélkül is tudsz.</string>
+    <string name="auth_login">Belépés</string>
+    <string name="auth_register">Regisztráció</string>
+    <string name="auth_login_action">Belépek</string>
+    <string name="auth_register_action">Fiók létrehozása</string>
+    <string name="auth_username">Felhasználónév</string>
+    <string name="auth_username_help">3–20 karakter: betűk, számok, _ . - (betűvel kezdődjön)</string>
+    <string name="auth_password">Jelszó</string>
+    <string name="auth_confirm">Jelszó még egyszer</string>
+    <string name="auth_show_password">Jelszó megjelenítése</string>
+    <string name="auth_hide_password">Jelszó elrejtése</string>
+    <string name="auth_privacy_note">Nem kérünk e-mail-címet. A felhasználóneved és a pontszámaid látszanak a ranglistán. Elfelejtett jelszót nem lehet visszaállítani, ezért jegyezd meg (vagy használj jelszókezelőt).</string>
+    <string name="auth_strength_0">Nagyon gyenge</string>
+    <string name="auth_strength_1">Gyenge</string>
+    <string name="auth_strength_2">Közepes</string>
+    <string name="auth_strength_3">Erős</string>
+    <string name="auth_strength_4">Nagyon erős</string>
+    <string name="rule_length">Legalább 10 karakter</string>
+    <string name="rule_lower">Kisbetű</string>
+    <string name="rule_upper">Nagybetű</string>
+    <string name="rule_digit">Szám</string>
+    <string name="rule_symbol">Különleges karakter (pl. ! ? # -)</string>
+    <string name="rule_not_username">Nem tartalmazza a felhasználónevet</string>
+    <string name="rule_not_common">Nem könnyen kitalálható (pl. „jelszo”, „123456”)</string>
+    <string name="username_too_short">Legalább 3 karakter kell.</string>
+    <string name="username_too_long">Legfeljebb 20 karakter lehet.</string>
+    <string name="username_start_letter">Betűvel kell kezdődnie.</string>
+    <string name="username_chars">Csak ékezet nélküli betűk, számok és _ . - használhatók.</string>
+    <string name="auth_error_mismatch">A két jelszó nem egyezik.</string>
+    <string name="auth_error_username">Érvénytelen felhasználónév.</string>
+    <string name="auth_error_weak">A jelszó túl gyenge.</string>
+    <string name="auth_error_taken">Ez a felhasználónév már foglalt.</string>
+    <string name="auth_error_credentials">Hibás felhasználónév vagy jelszó.</string>
+    <string name="auth_error_too_many">Túl sok próbálkozás. Várj egy kicsit, aztán próbáld újra.</string>
+    <string name="auth_error_network">Nincs internetkapcsolat.</string>
+    <string name="auth_error_unavailable">A fiókok ebben a verzióban nem érhetők el.</string>
+    <string name="auth_error_unknown">Valami hiba történt. Próbáld újra.</string>
+
+    <!-- Records -->
+    <string name="records_logged_in_as">Bejelentkezve: %1$s</string>
+    <string name="records_logout">Kijelentkezés</string>
+    <string name="records_mine">Saját rekordjaim</string>
+    <string name="records_global">Globális</string>
+    <string name="records_empty">Még nincs befejezett játék ebben a módban.</string>
+    <string name="records_global_offline">A globális ranglista csak bejelentkezve, internettel érhető el.</string>
+    <string name="records_global_error">Nem sikerült betölteni a ranglistát.</string>
+    <string name="records_retry">Újra</string>
+    <string name="records_row_detail">%1$s · %2$d/%3$d</string>
+    <string name="records_points">%1$d pont</string>
+
     <string name="placeholder_learn">Tanulj, mielőtt játszol: hamarosan.</string>
-    <string name="placeholder_results">Még nincs eredmény.</string>
 </resources>

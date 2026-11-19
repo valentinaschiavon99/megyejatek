@@ -5,9 +5,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.valentinaschiavon99.megyejatek.core.data.map.MapData
+import io.github.valentinaschiavon99.megyejatek.core.auth.AuthRepository
 import io.github.valentinaschiavon99.megyejatek.core.data.map.MapRepository
+import io.github.valentinaschiavon99.megyejatek.core.data.scores.RoundResult
+import io.github.valentinaschiavon99.megyejatek.core.data.scores.ScoresRepository
 import io.github.valentinaschiavon99.megyejatek.core.data.prefs.SettingsRepository
 import io.github.valentinaschiavon99.megyejatek.core.security.InputSanitizer
+import io.github.valentinaschiavon99.megyejatek.game.engine.GameMode
 import io.github.valentinaschiavon99.megyejatek.game.engine.Outcome
 import io.github.valentinaschiavon99.megyejatek.game.engine.QuestionFactory
 import io.github.valentinaschiavon99.megyejatek.game.engine.RoundRules
@@ -69,6 +73,8 @@ data class GameUiState(
 class GameViewModel @Inject constructor(
     private val mapRepository: MapRepository,
     private val settings: SettingsRepository,
+    private val auth: AuthRepository,
+    private val scores: ScoresRepository,
 ) : ViewModel() {
 
     private val config = ScoringConfig.Default
@@ -89,13 +95,17 @@ class GameViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val data = mapRepository.mapData()
-            val name = settings.settings.first().playerName
+            val name = auth.currentPlayer?.username ?: settings.settings.first().playerName
             _state.update { it.copy(data = data, playerName = name) }
         }
     }
 
-    /** "Új játék": asks for a name only the first time. */
+    /**
+     * "Új játék". With an account the player's username is used; without Firebase (offline build)
+     * the "Ki játszik?" dialog asks for a nickname once.
+     */
     fun onNewGameClick() {
+        auth.currentPlayer?.let { p -> _state.update { it.copy(playerName = p.username) } }
         if (_state.value.playerName == null) _state.update { it.copy(showNewGameDialog = true) }
         else start()
     }
@@ -183,6 +193,7 @@ class GameViewModel @Inject constructor(
             round = RoundRules.complete(round, elapsed, config)
             _state.update { it.copy(elapsedMs = elapsed) }
             _events.tryEmit(GameEvent.Finished)
+            saveResult(round, elapsed)
         }
         _state.update {
             it.copy(
@@ -191,6 +202,20 @@ class GameViewModel @Inject constructor(
                 phase = if (round.finished) Phase.Finished else Phase.Playing,
             )
         }
+    }
+
+    private fun saveResult(round: RoundState, elapsedMs: Long) {
+        val result = RoundResult(
+            mode = GameMode.Megyek.key,
+            score = round.score,
+            timeMs = elapsedMs,
+            correct = round.correctCount,
+            total = round.total,
+            hints = round.hintsUsed,
+            gaveUp = round.gaveUp,
+        )
+        val name = _state.value.playerName ?: DEFAULT_NAME
+        viewModelScope.launch { runCatching { scores.save(result, name) } }
     }
 
     private fun flash(countyId: String, visual: CountyVisual, durationMs: Long) {

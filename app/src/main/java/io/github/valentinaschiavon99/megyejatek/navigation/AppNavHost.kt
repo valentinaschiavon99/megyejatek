@@ -31,6 +31,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import io.github.valentinaschiavon99.megyejatek.R
 import io.github.valentinaschiavon99.megyejatek.play.PlayScreen
+import io.github.valentinaschiavon99.megyejatek.results.ResultsScreen
 
 @Composable
 fun AppNavHost(navController: NavHostController = rememberNavController()) {
@@ -82,7 +83,7 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
             ) {
                 composable<PlayRoute> { PlayScreen() }
                 composable<LearnRoute> { Placeholder(R.string.placeholder_learn) }
-                composable<ResultsRoute> { Placeholder(R.string.placeholder_results) }
+                composable<ResultsRoute> { ResultsScreen() }
             }
         }
     }
