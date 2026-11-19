@@ -55,6 +55,8 @@ fun HungaryMap(
     showCities: Boolean = false,
     visibleCityIds: Set<String>? = null,
     blindMap: Boolean = false,
+    /** County names. Off in every game mode, where they would give the answer away. */
+    showLabels: Boolean = !blindMap,
     onCountyTap: ((countyId: String) -> Unit)? = null,
     onCityTap: ((cityId: String) -> Unit)? = null,
     onMapTap: ((lon: Double, lat: Double, countyId: String?) -> Unit)? = null,
@@ -178,7 +180,7 @@ fun HungaryMap(
             drawCircle(colors.land, 7.dp.toPx(), to)
             drawCircle(colors.correct, 5.5.dp.toPx(), to)
         }
-        if (!blindMap) {
+        if (showLabels && !blindMap) {
             val style = TextStyle(color = colors.label, fontSize = 10.sp, fontWeight = FontWeight.Medium)
             for (c in data.counties) {
                 val layout = textMeasurer.measure(c.name, style)

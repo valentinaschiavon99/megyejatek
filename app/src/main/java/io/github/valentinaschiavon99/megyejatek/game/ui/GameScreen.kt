@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -131,6 +132,7 @@ fun GameContent(
                 data = data,
                 countyStates = state.countyStates,
                 blindMap = blindMap,
+                showLabels = false,
                 onCountyTap = if (cityMode) null else onCountyTap,
                 onMapTap = if (cityMode) { lon, lat, _ -> onMapTap(lon, lat) } else null,
                 guess = state.lastGuess?.guess,
@@ -217,41 +219,45 @@ private fun PromptBar(
 ) {
     val q = round.current ?: return
     val (small, big) = promptTexts(data, round, q)
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    Column(
+        Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
     ) {
-        Column(Modifier.weight(1f)) {
+        Text(
+            small,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            big,
+            style = MaterialTheme.typography.titleLarge,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.testTag("prompt"),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                small,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(big, style = MaterialTheme.typography.titleLarge, modifier = Modifier.testTag("prompt"))
-            if (lastGuess != null) {
-                Text(
+                lastGuess?.let {
                     stringResource(
                         R.string.game_last_guess,
-                        data.cityById[lastGuess.cityId]?.name.orEmpty(),
-                        lastGuess.km.toInt(),
-                        lastGuess.points,
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.testTag("last-guess"),
-                )
+                        data.cityById[it.cityId]?.name.orEmpty(),
+                        it.km.toInt(),
+                        it.points,
+                    )
+                }.orEmpty(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f).testTag("last-guess"),
+            )
+            OutlinedButton(onClick = onHint) {
+                Icon(Icons.Outlined.Lightbulb, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.size(6.dp))
+                Text(stringResource(R.string.game_hint))
             }
-        }
-        OutlinedButton(onClick = onHint) {
-            Icon(Icons.Outlined.Lightbulb, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.size(6.dp))
-            Text(stringResource(R.string.game_hint))
-        }
-        TextButton(onClick = onGiveUp) {
-            Icon(Icons.Outlined.Flag, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.size(6.dp))
-            Text(stringResource(R.string.game_give_up))
+            TextButton(onClick = onGiveUp) {
+                Icon(Icons.Outlined.Flag, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.size(6.dp))
+                Text(stringResource(R.string.game_give_up))
+            }
         }
     }
 }
