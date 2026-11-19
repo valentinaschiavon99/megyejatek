@@ -1,5 +1,9 @@
 shapely>=2.0
 numpy>=2.5.5
+shapely>=2.2.0
+numpy>=1.26
 openpyxl>=3.1
 osm2geojson>=0.2.5
+requests>=2.34.2
+osm2geojson>=0.3.2
 requests>=2.31
