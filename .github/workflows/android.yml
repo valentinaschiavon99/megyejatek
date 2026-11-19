@@ -86,23 +86,6 @@ jobs:
           name: lint-report
           path: app/build/reports/lint-results-debug.html
 
-  dependency-graph:
-    # Sends the resolved Gradle dependencies to GitHub so Dependabot can raise security alerts.
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
-        with:
-          distribution: temurin
-          java-version: 21
-      - uses: gradle/actions/dependency-submission@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
-
   publish:
     # Only pushes to main update the downloadable APK; PRs and scheduled runs never publish.
     needs: build

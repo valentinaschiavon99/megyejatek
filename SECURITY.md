@@ -25,7 +25,7 @@ The only data it stores is your nickname, the Vaktérkép setting and (soon) loc
 - **CI** (`android.yml`) builds, compiles the UI tests and runs the unit tests on every push and PR, plus every Monday even without changes.
 - **Android lint** runs in CI with security checks promoted to errors; results appear under **Security → Code scanning**.
 - **CodeQL** (`security-extended` queries) scans the Kotlin code on every push and weekly.
-- **Dependabot** opens weekly update PRs for Gradle libraries, GitHub Actions and the Python pipeline. The Gradle dependency graph is submitted on every push, so vulnerable libraries raise alerts.
+- **Dependabot** opens weekly update PRs for Gradle libraries, GitHub Actions and the Python pipeline. Dependabot alerts flag libraries with known vulnerabilities.
 - All GitHub Actions are **pinned to commit SHAs**, workflows run with read-only permissions by default, and checkout does not keep the token.
 - The Gradle wrapper checksum is validated on every CI run.
 - Every published APK comes with a `.sha256` file to check the download.
