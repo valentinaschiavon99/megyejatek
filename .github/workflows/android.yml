@@ -38,14 +38,24 @@ jobs:
 
       - name: Firebase config (optional)
         # Forks and PRs from forks have no secrets: they build the offline-only app.
+        # The secret may hold the file base64-encoded or as plain JSON; a broken value only
+        # turns Firebase off for this build (with a warning) instead of failing it.
         env:
           GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
         run: |
-          if [ -n "$GOOGLE_SERVICES_JSON_B64" ]; then
-            printf '%s' "$GOOGLE_SERVICES_JSON_B64" | base64 -d > app/google-services.json
+          if [ -z "$GOOGLE_SERVICES_JSON_B64" ]; then
+            echo "No GOOGLE_SERVICES_JSON_B64 secret: building without accounts and online leaderboard."
+            exit 0
+          fi
+          case "$GOOGLE_SERVICES_JSON_B64" in
+            *"{"*) printf '%s' "$GOOGLE_SERVICES_JSON_B64" > app/google-services.json ;;
+            *) printf '%s' "$GOOGLE_SERVICES_JSON_B64" | tr -d ' \n\r' | base64 -d > app/google-services.json 2>/dev/null || true ;;
+          esac
+          if python3 -c "import json,sys; d=json.load(open('app/google-services.json')); assert d['client'][0]['client_info']['android_client_info']['package_name']=='io.github.valentinaschiavon99.megyejatek'" 2>/dev/null; then
             echo "Firebase enabled for this build."
           else
-            echo "No GOOGLE_SERVICES_JSON_B64 secret: building without accounts and online leaderboard."
+            rm -f app/google-services.json
+            echo "::warning title=Firebase disabled::GOOGLE_SERVICES_JSON_B64 is not a valid google-services.json for this app; building without Firebase."
           fi
 
       - name: Build APK, compile UI tests, run unit tests
