@@ -9,7 +9,13 @@
     <string name="nav_results">Eredmények</string>
 
     <!-- Placeholders until the screens are built -->
-    <string name="placeholder_play">Itt lesz a játék.</string>
+
+    <!-- Map -->
+    <string name="map_tap_hint">Koppints egy megyére vagy városra!</string>
+    <string name="map_seat">Székhely: %1$s</string>
+    <string name="map_city_detail">%1$s fő · %2$s</string>
+    <string name="map_load_error">A térkép nem tölthető be: %1$s</string>
+    <string name="blind_map">Vaktérkép</string>
     <string name="placeholder_learn">Tanulj, mielőtt játszol: hamarosan.</string>
     <string name="placeholder_results">Még nincs eredmény.</string>
 </resources>

@@ -30,6 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import io.github.valentinaschiavon99.megyejatek.R
+import io.github.valentinaschiavon99.megyejatek.play.PlayScreen
 
 @Composable
 fun AppNavHost(navController: NavHostController = rememberNavController()) {
@@ -79,7 +80,7 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
                 startDestination = PlayRoute,
                 modifier = Modifier.weight(1f),
             ) {
-                composable<PlayRoute> { Placeholder(R.string.placeholder_play) }
+                composable<PlayRoute> { PlayScreen() }
                 composable<LearnRoute> { Placeholder(R.string.placeholder_learn) }
                 composable<ResultsRoute> { Placeholder(R.string.placeholder_results) }
             }

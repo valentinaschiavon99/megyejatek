@@ -1,19 +1,24 @@
 package io.github.valentinaschiavon99.megyejatek
 
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import io.github.valentinaschiavon99.megyejatek.core.ui.theme.MegyejatekTheme
-import io.github.valentinaschiavon99.megyejatek.navigation.AppNavHost
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Rule
 import org.junit.Test
 
+@HiltAndroidTest
 class NavigationSmokeTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule(order = 0) val hilt = HiltAndroidRule(this)
+    @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun bottomTabsSwitchScreens() {
-        compose.setContent { MegyejatekTheme { AppNavHost() } }
+    fun introThenBottomTabsSwitchScreens() {
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("intro").fetchSemanticsNodes().isEmpty() }
+
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("hungary-map").fetchSemanticsNodes().isNotEmpty() }
 
         compose.onNodeWithText("Tanulj").performClick()
         compose.onNodeWithText("Tanulj, mielőtt játszol: hamarosan.").assertExists()
