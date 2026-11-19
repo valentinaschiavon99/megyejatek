@@ -43,7 +43,10 @@ CACHE = ROOT / "tools" / "cache"     # overridable with --cache
 ASSETS = ROOT / "app" / "src" / "main" / "assets" / "map"     # overridable with --out
 OVERRIDES = ROOT / "tools" / "neighbour_overrides.json"
 
-OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+OVERPASS_URLS = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+]
 NE_BASE = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson"
 NE_LAYERS = ["ne_10m_rivers_lake_centerlines", "ne_10m_rivers_europe", "ne_10m_lakes", "ne_10m_lakes_europe"]
 MAPSHAPER = "mapshaper@0.8.5"
@@ -193,6 +196,8 @@ def read_ksh(path: Path) -> list[dict]:
             name, county, pop = r[c_name], r[c_county], r[c_pop]
             if not name or not isinstance(pop, (int, float)):
                 continue
+            if not county and not str(name).startswith("Budapest"):
+                continue  # summary rows such as "Összesen"
             out.append({"name": str(name).strip(), "county": str(county or "").strip(), "population": int(pop)})
         log(f"KSH: {len(out)} settlement rows read from sheet '{ws.title}'")
         return out
@@ -200,13 +205,13 @@ def read_ksh(path: Path) -> list[dict]:
 
 
 def ksh_big_settlements(rows: list[dict]) -> list[dict]:
-    # Budapest may be listed as one row or as 23 district rows ("Budapest 01. ker.").
-    if not any(r["name"] == "Budapest" for r in rows):
-        districts = [r for r in rows if r["name"].startswith("Budapest ")]
-        if districts:
-            rows = [r for r in rows if not r["name"].startswith("Budapest ")]
-            rows.append({"name": "Budapest", "county": "Budapest",
-                         "population": sum(d["population"] for d in districts)})
+    # Budapest may be listed as one row, as 23 district rows ("Budapest 01. ker.") or both.
+    # The game treats it as one city: keep the city row, or sum the districts if it is missing.
+    districts = [r for r in rows if re.match(r"^Budapest \d", r["name"])]
+    rows = [r for r in rows if r not in districts]
+    if districts and not any(r["name"] == "Budapest" for r in rows):
+        rows.append({"name": "Budapest", "county": "Budapest",
+                     "population": sum(d["population"] for d in districts)})
     big = []
     for r in rows:
         if r["population"] <= POPULATION_CUT:
@@ -238,10 +243,21 @@ def overpass_regex_literal(name: str) -> str:
 
 
 def overpass(query: str):
+    """Runs an Overpass query, retrying with back-off and a second public endpoint."""
+    import time
     import osm2geojson
-    log("Overpass: querying (this can take a few minutes)...")
-    raw = json.loads(http_get(OVERPASS_URL, data={"data": query}))
-    return osm2geojson.json2geojson(raw, filter_used_refs=True)
+    last: Exception | None = None
+    for attempt in range(4):
+        url = OVERPASS_URLS[attempt % len(OVERPASS_URLS)]
+        try:
+            log(f"Overpass: querying {url} (attempt {attempt + 1}, this can take a few minutes)...")
+            raw = json.loads(http_get(url, data={"data": query}))
+            return osm2geojson.json2geojson(raw, filter_used_refs=True)
+        except Exception as e:  # network errors, 429/504 from busy servers, truncated JSON
+            last = e
+            log(f"Overpass: failed ({e}); retrying")
+            time.sleep(30 * (attempt + 1))
+    fail(f"Overpass unreachable: {last}")
 
 
 def cmd_fetch(args) -> None:

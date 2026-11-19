@@ -20,6 +20,10 @@ Until the full pipeline has been run, `assets/map/` holds **interim data built o
 
 ## Regenerating the data
 
+**Easiest: let GitHub do it.** The KSH table is kept in `tools/data/` (currently `hnt_letoltes_2026.xlsx`, as of 1 January 2026). Any change to the pipeline or to that folder runs the **Map data** workflow, which fetches OSM and Natural Earth, builds the assets and pushes them to the `map-data` branch for review. For a new KSH edition, add the new file to `tools/data/`: the newest one is used.
+
+**Locally:**
+
 Needs Python 3.10+ and Node.js (for `npx mapshaper`). Run from the repo root.
 
 ```bash
