@@ -1,0 +1,22 @@
+# Gradle / Android Studio
+.gradle/
+build/
+/local.properties
+/.idea/
+*.iml
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# macOS
+.DS_Store
+
+# Data pipeline
+tools/cache/
+tools/.venv/
+__pycache__/
+*.pyc
+node_modules/

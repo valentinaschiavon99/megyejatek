@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Megyejáték</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_play">Játék</string>
+    <string name="nav_learn">Tanulj</string>
+    <string name="nav_results">Eredmények</string>
+
+    <!-- Placeholders until the screens are built -->
+    <string name="placeholder_play">Itt lesz a játék.</string>
+    <string name="placeholder_learn">Tanulj, mielőtt játszol: hamarosan.</string>
+    <string name="placeholder_results">Még nincs eredmény.</string>
+</resources>
