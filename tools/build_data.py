@@ -226,6 +226,17 @@ def ksh_big_settlements(rows: list[dict]) -> list[dict]:
 
 # ---------------------------------------------------------------- fetch
 
+_SETTLEMENT_NAME = re.compile(r"^[\w .'\-]+$", re.UNICODE)
+
+
+def overpass_regex_literal(name: str) -> str:
+    """Escapes a settlement name for an Overpass (POSIX ERE) regex inside a double-quoted string.
+    Names come from the KSH file, but the query must stay well-formed whatever is in it."""
+    if not _SETTLEMENT_NAME.match(name):
+        fail(f"unexpected characters in settlement name {name!r}")
+    return re.sub(r"([.^$*+?()\[\]{}|\\])", r"\\\\\1", name)
+
+
 def overpass(query: str):
     import osm2geojson
     log("Overpass: querying (this can take a few minutes)...")
@@ -255,7 +266,7 @@ def cmd_fetch(args) -> None:
     write_json(CACHE / "osm_counties.geojson", counties)
     log(f"OSM: {len(counties['features'])} county-level boundaries saved")
 
-    names = "|".join(re.escape(r["name"]) for r in big if r["name"] != "Budapest")
+    names = "|".join(overpass_regex_literal(r["name"]) for r in big if r["name"] != "Budapest")
     settlements = overpass(f"""
         [out:json][timeout:600];
         {hu}
