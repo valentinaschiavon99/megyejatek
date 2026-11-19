@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import io.github.valentinaschiavon99.megyejatek.core.security.InputSanitizer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -29,7 +30,8 @@ class SettingsRepository @Inject constructor(
     }
 
     suspend fun setPlayerName(name: String) {
-        dataStore.edit { it[Keys.PLAYER_NAME] = name.trim() }
+        // Sanitised here too, so nothing unclean is stored whatever the caller does.
+        dataStore.edit { it[Keys.PLAYER_NAME] = InputSanitizer.nickname(name) }
     }
 
     suspend fun setBlindMap(enabled: Boolean) {

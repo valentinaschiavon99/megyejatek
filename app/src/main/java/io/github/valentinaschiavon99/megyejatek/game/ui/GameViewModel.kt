@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.valentinaschiavon99.megyejatek.core.data.map.MapData
 import io.github.valentinaschiavon99.megyejatek.core.data.map.MapRepository
 import io.github.valentinaschiavon99.megyejatek.core.data.prefs.SettingsRepository
+import io.github.valentinaschiavon99.megyejatek.core.security.InputSanitizer
 import io.github.valentinaschiavon99.megyejatek.game.engine.Outcome
 import io.github.valentinaschiavon99.megyejatek.game.engine.QuestionFactory
 import io.github.valentinaschiavon99.megyejatek.game.engine.RoundRules
@@ -102,7 +103,7 @@ class GameViewModel @Inject constructor(
     fun onDialogDismiss() = _state.update { it.copy(showNewGameDialog = false) }
 
     fun onDialogStart(name: String) {
-        val clean = name.trim().ifEmpty { DEFAULT_NAME }
+        val clean = InputSanitizer.nickname(name).ifEmpty { DEFAULT_NAME }
         viewModelScope.launch { settings.setPlayerName(clean) }
         _state.update { it.copy(playerName = clean, showNewGameDialog = false) }
         start()

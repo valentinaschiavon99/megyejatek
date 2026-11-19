@@ -45,6 +45,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.valentinaschiavon99.megyejatek.R
 import io.github.valentinaschiavon99.megyejatek.core.data.map.MapData
+import io.github.valentinaschiavon99.megyejatek.core.security.InputSanitizer
 import io.github.valentinaschiavon99.megyejatek.game.engine.RoundState
 import io.github.valentinaschiavon99.megyejatek.map.HungaryMap
 
@@ -235,7 +236,7 @@ private fun NewGameDialog(onStart: (String) -> Unit, onDismiss: () -> Unit) {
                 Text(stringResource(R.string.dialog_who_plays))
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it.take(24) },
+                    onValueChange = { name = it.take(InputSanitizer.MAX_NICKNAME_LENGTH * 2) },
                     label = { Text(stringResource(R.string.dialog_nickname)) },
                     singleLine = true,
                     modifier = Modifier.testTag("name-field"),
