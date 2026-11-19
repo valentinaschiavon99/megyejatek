@@ -5,52 +5,128 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    # Weekly health check: catches dependency or toolchain rot even when nobody pushes.
+    - cron: "17 4 * * 1"
 
+# Least privilege by default; jobs that need more ask for it explicitly.
 permissions:
-  contents: write   # needed to update the "latest" pre-release with the APK
+  contents: read
 
 concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: true
 
+# Actions are pinned to full commit SHAs (tag in the comment) so a moved tag can't change
+# what runs here. Dependabot keeps the pins up to date. setup-gradle also validates the
+# Gradle wrapper checksum on every run.
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: 21
 
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
       - name: Build APK, compile UI tests, run unit tests
         run: ./gradlew assembleDebug assembleDebugAndroidTest testDebugUnitTest --stacktrace
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: megyejatek-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
 
       - name: Upload test reports
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: test-reports
           path: app/build/reports/
 
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write # upload the SARIF report to code scanning
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Android lint
+        run: ./gradlew lintDebug --continue
+
+      - name: Upload lint results to code scanning
+        if: always() && github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: app/build/reports/lint-results-debug.sarif
+          category: android-lint
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.html
+
+  dependency-graph:
+    # Sends the resolved Gradle dependencies to GitHub so Dependabot can raise security alerts.
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/dependency-submission@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+  publish:
+    # Only pushes to main update the downloadable APK; PRs and scheduled runs never publish.
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # create the "latest" pre-release
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: megyejatek-debug
+
       - name: Publish APK to the "latest" pre-release
-        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk megyejatek-debug.apk
+          mv app-debug.apk megyejatek-debug.apk
+          sha256sum megyejatek-debug.apk > megyejatek-debug.apk.sha256
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest megyejatek-debug.apk \
+          gh release create latest megyejatek-debug.apk megyejatek-debug.apk.sha256 \
             --prerelease \
-            --target "$GITHUB_SHA" \
+            --target "$SHA" \
             --title "Ultima build (debug)" \
-            --notes "APK di debug generato automaticamente dal commit ${GITHUB_SHA::7}. Scaricalo dal telefono e installalo."
+            --notes "APK di debug generato automaticamente dal commit ${SHA::7}. Il file .sha256 serve a verificare che il download sia integro."
