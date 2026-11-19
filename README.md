@@ -36,7 +36,7 @@ Kotlin · Jetpack Compose · Material 3 · Navigation Compose · Hilt · Room ·
 
 ## Security
 
-See [SECURITY.md](SECURITY.md) for how to report a vulnerability and what the app and CI do to stay safe.
+See [SECURITY.md](SECURITY.md) for how to report a vulnerability and what the app and CI do to stay safe, and [PRIVACY.md](PRIVACY.md) for what data the app stores.
 
 ## Licence
 

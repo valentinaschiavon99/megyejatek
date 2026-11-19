@@ -5,20 +5,26 @@
 Please **do not open a public issue**. Use GitHub's private reporting instead:
 **Security → Report a vulnerability** on this repository. I'll answer within a week.
 
-## What the app does today
+## What the app does
 
-Megyejáték is fully offline. It has no `INTERNET` permission, no accounts and no analytics.
-The only data it stores is your nickname, the Vaktérkép setting and (soon) local scores.
+The game works offline. Network is used only for accounts and the global leaderboard (Firebase).
+Without `google-services.json` the app is built offline-only, with no accounts at all.
 
 | Area | Measure |
 |---|---|
-| Permissions | Only `VIBRATE`. The only exported component is the launcher activity. |
-| Stored data | App-private storage only. Cloud backup and device-to-device transfer are disabled. |
-| Network | Network security config allows HTTPS only and trusts system CAs only, ready for when the online leaderboard arrives. |
+| Accounts | Username + password on Firebase Authentication. No e-mail is collected: the username maps to an address under the reserved `.invalid` domain. Usernames are unique case-insensitively. |
+| Passwords | At least 10 characters with lower and upper case, digit and symbol; must not contain the username or common words (`CredentialPolicy`). Enforce the same in Firebase → Authentication → Password policy. Passwords are only handed to Firebase, never stored or logged, and cleared from memory after each attempt. |
+| Login errors | "Wrong username or password" for both unknown users and wrong passwords, so usernames can't be probed. Firebase throttles repeated attempts. |
+| Database | Firestore rules (`firebase/firestore.rules`): read only when signed in; a player can create their own profile once and add scores only under their own uid and username; scores are range-checked against the scoring limits; nothing can be edited or deleted; everything else is closed. |
+| Permissions | `INTERNET` and `VIBRATE` only. The only exported component is the launcher activity. |
+| Stored data | App-private storage only. Cloud backup and device-to-device transfer are disabled, so sessions and scores are never copied off the phone. |
+| Network | HTTPS only, system CAs only (no user-installed certificates). |
 | Input | Nicknames are cleaned of control, zero-width and bidi-override characters and length-capped (`InputSanitizer`). |
 | Task hijacking | The launcher activity has an empty `taskAffinity`. |
 | Release builds | R8 shrinking and obfuscation, not debuggable. The signing key is read from environment variables, never from the repo. |
 | Debug builds | Signed with the **public** debug key in `app/debug.keystore`, only so CI builds install over each other. Never trust an APK only because of this signature. |
+| Secrets | `google-services.json` is git-ignored and injected in CI from the `GOOGLE_SERVICES_JSON_B64` secret. |
+| Crash reports | Firebase Crashlytics, without user ids or usernames. |
 
 ## Supply chain and health checks
 
@@ -30,12 +36,7 @@ The only data it stores is your nickname, the Vaktérkép setting and (soon) loc
 - The Gradle wrapper checksum is validated on every CI run.
 - Every published APK comes with a `.sha256` file to check the download.
 
-## Planned with the online features (Firebase)
+## Known limits
 
-When accounts and global leaderboards are added:
-
-- Firebase Authentication with a strong password policy (minimum 10 characters, upper and lower case, digit and symbol), enforced by the server as well as in the app.
-- Firebase App Check with Play Integrity, so only the genuine app can call the backend.
-- Firestore security rules: players can only write their own scores; scores are validated (range, time, mode) by the rules.
-- No secrets in the repo: `google-services.json` stays out of git and is injected in CI from a secret.
-- Crash reporting (Crashlytics) without personal data.
+- **App Check is not enforced.** Play Integrity only vouches for apps installed from Google Play, and this APK is distributed through GitHub. The Firestore rules are the line of defence; a determined player could still post a plausible fake score through the API.
+- **No password reset**, because there is no e-mail address. Players should use a password manager.

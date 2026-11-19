@@ -2,7 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- The app is fully offline: no INTERNET permission. Haptics only. -->
+    <!-- Network only for accounts and the global leaderboard (Firebase, HTTPS only, see
+         network_security_config). The game itself works offline. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
