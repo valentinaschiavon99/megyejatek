@@ -28,7 +28,7 @@ import java.text.NumberFormat
 import java.util.Locale
 
 @Composable
-fun PlayScreen(viewModel: PlayViewModel = hiltViewModel()) {
+fun OverviewScreen(viewModel: OverviewViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val blind by viewModel.blindMap.collectAsStateWithLifecycle()
     val data = state.data
@@ -45,7 +45,7 @@ fun PlayScreen(viewModel: PlayViewModel = hiltViewModel()) {
             HungaryMap(
                 data = data,
                 modifier = Modifier.weight(1f),
-                countyStates = state.selectedCountyId?.let { mapOf(it to CountyVisual.Highlighted) }.orEmpty(),
+                countyStates = overviewStates(data, state.selectedCountyId),
                 cityStates = state.selectedCityId?.let { mapOf(it to CountyVisual.Correct) }.orEmpty(),
                 showCities = true,
                 blindMap = blind,
@@ -95,9 +95,31 @@ private fun InfoBar(
                 if (detail != null) {
                     Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                if (city == null && county != null) {
+                    val neighbours = county.info.neighbours.mapNotNull { data.countyById[it]?.name }.joinToString(", ")
+                    Text(
+                        stringResource(R.string.map_neighbours, neighbours),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    val cities = county.info.cityIds.mapNotNull { data.cityById[it]?.name }.joinToString(", ")
+                    if (cities.isNotEmpty()) {
+                        Text(
+                            stringResource(R.string.map_cities, cities),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
             Text(stringResource(R.string.blind_map), style = MaterialTheme.typography.labelLarge)
             Switch(checked = blind, onCheckedChange = onBlindChange)
         }
     }
+}
+
+/** Selected county in yellow, its neighbours in the hint colour. */
+private fun overviewStates(data: MapData, selectedId: String?): Map<String, CountyVisual> {
+    val county = selectedId?.let { data.countyById[it] } ?: return emptyMap()
+    return county.info.neighbours.associateWith { CountyVisual.Hinted } + (county.id to CountyVisual.Highlighted)
 }

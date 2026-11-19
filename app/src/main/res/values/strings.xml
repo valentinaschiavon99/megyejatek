@@ -16,6 +16,32 @@
     <string name="map_city_detail">%1$s fő · %2$s</string>
     <string name="map_load_error">A térkép nem tölthető be: %1$s</string>
     <string name="blind_map">Vaktérkép</string>
+    <string name="map_neighbours">Szomszédok: %1$s</string>
+    <string name="map_cities">Városok: %1$s</string>
+    <string name="mode_coming_soon">Ez a játékmód hamarosan érkezik.</string>
+
+    <!-- Game -->
+    <string name="game_find">Keresd meg:</string>
+    <string name="game_county_name">%1$s megye</string>
+    <string name="game_progress">%1$d/%2$d</string>
+    <string name="game_multiplier">×%1$d pont</string>
+    <string name="game_score">%1$d pont</string>
+    <string name="game_hint">Súgás</string>
+    <string name="game_give_up">Feladom</string>
+    <string name="game_new">Új játék</string>
+    <string name="game_megyek_title">Megyék</string>
+    <string name="game_megyek_help">Koppints a térképen a megnevezett megyére. Egymás utáni jó válaszokért nő a szorzó; hiba vagy súgás után újra ×1.</string>
+    <string name="dialog_who_plays">Ki játszik?</string>
+    <string name="dialog_nickname">Becenév</string>
+    <string name="dialog_start">Kezdés</string>
+    <string name="dialog_close">Bezárás</string>
+    <string name="result_title_done">Vége a játéknak!</string>
+    <string name="result_title_gave_up">Feladtad</string>
+    <string name="result_score">Pontszám: %1$d</string>
+    <string name="result_time">Idő: %1$s</string>
+    <string name="result_correct">Eltalált: %1$d / %2$d</string>
+    <string name="result_time_bonus">Időbónusz: +%1$d</string>
+    <string name="result_hints">Súgások: %1$d</string>
     <string name="placeholder_learn">Tanulj, mielőtt játszol: hamarosan.</string>
     <string name="placeholder_results">Még nincs eredmény.</string>
 </resources>

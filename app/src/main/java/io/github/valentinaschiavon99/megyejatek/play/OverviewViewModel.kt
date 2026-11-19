@@ -17,11 +17,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Temporary map explorer for the "Játék" tab, used to try the map component on a phone.
- * It is replaced by the real game screen in the "Megyék" step.
+ * "Áttekintés": free study mode. Tap a county or city to see its details.
  */
 @HiltViewModel
-class PlayViewModel @Inject constructor(
+class OverviewViewModel @Inject constructor(
     private val mapRepository: MapRepository,
     private val settings: SettingsRepository,
 ) : ViewModel() {

@@ -64,7 +64,7 @@ fun HungaryMap(
     var size by remember { mutableStateOf(IntSize.Zero) }
     var viewport by remember { mutableStateOf(MapViewport.Identity) }
 
-    val paddingPx = with(density) { 12.dp.toPx() }
+    val paddingPx = with(density) { HungaryMapDefaults.ContentPadding.toPx() }
     val projection = remember(data, size) {
         if (size.width > 0 && size.height > 0) {
             Projection(data.bounds, size.width.toFloat(), size.height.toFloat(), paddingPx)
@@ -176,6 +176,11 @@ fun HungaryMap(
             }
         }
     }
+}
+
+object HungaryMapDefaults {
+    /** Space between the canvas edge and the country at zoom 1. */
+    val ContentPadding: Dp = 12.dp
 }
 
 private fun MapColors.fillFor(state: CountyVisual?): Color = when (state) {
