@@ -9,12 +9,17 @@ Written from scratch in Kotlin with Jetpack Compose. Map and city data come from
 
 ## Features
 
-- **Megyék**: a county is named, tap it on the map. Timer, score multiplier for streaks, Súgás (hint) and Feladom (give up), time bonus.
+- Five scored modes, all with a timer, a multiplier for streaks, Súgás (hint), Feladom (give up) and a time bonus:
+  - **Megyék**: a county is named, tap it on the map.
+  - **Székhelyek**: a county seat is named, tap its county (Pest's seat is Budapest!).
+  - **Szomszédok**: a county is highlighted, tap all of its neighbours.
+  - **Városok**: a town is named, tap where it is; points by distance.
+  - **Felsorolás**: tap every county from west to east.
 - **Áttekintés**: free study mode; tap a county to see its seat, neighbours and towns.
 - Real borders from OpenStreetMap and all 139 places above 10,000 inhabitants (KSH, 1 January 2026).
 - **Vaktérkép**: hide names and county borders.
 - Accounts with a username and a strong password; personal records on the phone and a global leaderboard (Firebase). The game itself works offline.
-- Coming next: Székhelyek, Szomszédok, Városok and Felsorolás modes, and the "Tanulj, mielőtt játszol" learning section.
+- Coming next: the "Tanulj, mielőtt játszol" learning section.
 
 ## Install the latest build
 

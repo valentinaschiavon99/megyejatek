@@ -20,7 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.valentinaschiavon99.megyejatek.R
 import io.github.valentinaschiavon99.megyejatek.game.engine.GameMode
-import io.github.valentinaschiavon99.megyejatek.game.ui.MegyekScreen
+import io.github.valentinaschiavon99.megyejatek.game.ui.GameScreen
 
 /** "Játék" tab: a row of game modes above the selected mode's screen. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,9 +39,9 @@ fun PlayScreen() {
             }
         }
         Box(Modifier.weight(1f)) {
-            when (mode) {
-                GameMode.Megyek -> MegyekScreen()
-                GameMode.Attekintes -> OverviewScreen()
+            when {
+                mode == GameMode.Attekintes -> OverviewScreen()
+                mode.implemented -> GameScreen(mode)
                 else -> Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                     Text(stringResource(R.string.mode_coming_soon), style = MaterialTheme.typography.bodyLarge)
                 }

@@ -4,21 +4,25 @@ import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.valentinaschiavon99.megyejatek.core.data.map.MapData
 import io.github.valentinaschiavon99.megyejatek.core.auth.AuthRepository
+import io.github.valentinaschiavon99.megyejatek.core.data.map.MapData
 import io.github.valentinaschiavon99.megyejatek.core.data.map.MapRepository
+import io.github.valentinaschiavon99.megyejatek.core.data.prefs.SettingsRepository
 import io.github.valentinaschiavon99.megyejatek.core.data.scores.RoundResult
 import io.github.valentinaschiavon99.megyejatek.core.data.scores.ScoresRepository
-import io.github.valentinaschiavon99.megyejatek.core.data.prefs.SettingsRepository
+import io.github.valentinaschiavon99.megyejatek.core.geo.PolygonMath
 import io.github.valentinaschiavon99.megyejatek.core.security.InputSanitizer
 import io.github.valentinaschiavon99.megyejatek.game.engine.GameMode
 import io.github.valentinaschiavon99.megyejatek.game.engine.Outcome
+import io.github.valentinaschiavon99.megyejatek.game.engine.PromptKind
+import io.github.valentinaschiavon99.megyejatek.game.engine.Question
 import io.github.valentinaschiavon99.megyejatek.game.engine.QuestionFactory
 import io.github.valentinaschiavon99.megyejatek.game.engine.RoundRules
 import io.github.valentinaschiavon99.megyejatek.game.engine.RoundState
 import io.github.valentinaschiavon99.megyejatek.game.engine.ScoringConfig
 import io.github.valentinaschiavon99.megyejatek.game.engine.TapResult
 import io.github.valentinaschiavon99.megyejatek.map.CountyVisual
+import io.github.valentinaschiavon99.megyejatek.map.MapGuess
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -41,7 +45,11 @@ enum class Phase { Idle, Playing, Finished }
 /** Short-lived feedback for the UI (haptics). */
 enum class GameEvent { Correct, Wrong, Hint, Finished }
 
+/** Result of the last Városok guess, shown on the map and under the prompt. */
+data class LastGuess(val cityId: String, val guess: MapGuess, val km: Double, val points: Int, val good: Boolean)
+
 data class GameUiState(
+    val mode: GameMode = GameMode.Megyek,
     val data: MapData? = null,
     val phase: Phase = Phase.Idle,
     val round: RoundState? = null,
@@ -49,18 +57,27 @@ data class GameUiState(
     val multiplier: Int = 1,
     /** Temporary colours (wrong flash, hint flash) drawn over the round's permanent ones. */
     val flashes: Map<String, CountyVisual> = emptyMap(),
+    val lastGuess: LastGuess? = null,
     val showNewGameDialog: Boolean = false,
     val playerName: String? = null,
 ) {
     val countyStates: Map<String, CountyVisual>
         get() {
             val r = round ?: return flashes
+            val current = r.current
             val permanent = buildMap {
-                for (q in r.questions) {
-                    when (r.outcomes[q.id]) {
-                        Outcome.Correct -> put(q.answerId, CountyVisual.Correct)
-                        Outcome.Revealed, Outcome.GivenUp -> put(q.answerId, CountyVisual.Hinted)
-                        null -> Unit
+                if (current?.kind == PromptKind.NeighboursOf) {
+                    put(current.subject, CountyVisual.Highlighted)
+                    r.foundInCurrent.forEach { put(it, CountyVisual.Correct) }
+                } else {
+                    for (q in r.questions) {
+                        if (!q.kind.oneShotAnswers) continue
+                        val id = q.hintIds.first()
+                        when (r.outcomes[q.id]) {
+                            Outcome.Correct -> put(id, CountyVisual.Correct)
+                            Outcome.Revealed, Outcome.GivenUp -> put(id, CountyVisual.Hinted)
+                            null -> Unit
+                        }
                     }
                 }
             }
@@ -68,7 +85,7 @@ data class GameUiState(
         }
 }
 
-/** Runs the "Megyék" round: name a county, the player taps it. */
+/** Runs one round of any scored mode; the screen picks the mode with [selectMode]. */
 @HiltViewModel
 class GameViewModel @Inject constructor(
     private val mapRepository: MapRepository,
@@ -100,6 +117,11 @@ class GameViewModel @Inject constructor(
         }
     }
 
+    /** Called once by the screen; a view model instance is kept per mode. */
+    fun selectMode(mode: GameMode) {
+        if (_state.value.mode != mode && _state.value.phase == Phase.Idle) _state.update { it.copy(mode = mode) }
+    }
+
     /**
      * "Új játék". With an account the player's username is used; without Firebase (offline build)
      * the "Ki játszik?" dialog asks for a nickname once.
@@ -120,16 +142,17 @@ class GameViewModel @Inject constructor(
     }
 
     private fun start() {
-        val data = _state.value.data ?: return
-        flashJobs.values.forEach { it.cancel() }
-        flashJobs.clear()
+        val s = _state.value
+        val data = s.data ?: return
+        clearAllFlashes()
         _state.update {
             it.copy(
                 phase = Phase.Playing,
-                round = RoundState(QuestionFactory.megyek(data)),
+                round = RoundState(QuestionFactory.forMode(s.mode, data)),
                 elapsedMs = 0,
                 multiplier = 1,
                 flashes = emptyMap(),
+                lastGuess = null,
             )
         }
         startedAt = SystemClock.elapsedRealtime()
@@ -145,7 +168,7 @@ class GameViewModel @Inject constructor(
     fun onCountyTap(countyId: String) {
         val s = _state.value
         val round = s.round ?: return
-        if (s.phase != Phase.Playing) return
+        if (s.phase != Phase.Playing || round.current?.kind == PromptKind.FindCity) return
         val (next, result) = RoundRules.tap(round, countyId, config)
         when (result) {
             is TapResult.Correct -> {
@@ -159,8 +182,30 @@ class GameViewModel @Inject constructor(
             is TapResult.Revealed -> {
                 _events.tryEmit(GameEvent.Wrong)
                 flash(result.tappedId, CountyVisual.Wrong, 600)
+                // Neighbour answers are not kept on the map after the question, so show them briefly.
+                if (round.current?.kind == PromptKind.NeighboursOf) {
+                    result.missing.forEach { flash(it, CountyVisual.Hinted, 1_500) }
+                }
             }
-            TapResult.Ignored -> return
+            is TapResult.Guess, TapResult.Ignored -> return
+        }
+        applyRound(next)
+    }
+
+    /** Városok: a tap anywhere on the map is a guess for the asked city. */
+    fun onMapTap(lon: Double, lat: Double) {
+        val s = _state.value
+        val round = s.round ?: return
+        val q: Question = round.current ?: return
+        if (s.phase != Phase.Playing || q.kind != PromptKind.FindCity) return
+        val city = s.data?.cityById?.get(q.subject) ?: return
+        val km = PolygonMath.distanceKm(lon, lat, city.lon, city.lat)
+        val (next, result) = RoundRules.guess(round, km, config)
+        if (result !is TapResult.Guess) return
+        _events.tryEmit(if (result.good) GameEvent.Correct else GameEvent.Wrong)
+        clearAllFlashes()
+        _state.update {
+            it.copy(lastGuess = LastGuess(city.id, MapGuess(lon, lat, city.lon, city.lat), km, result.points, result.good))
         }
         applyRound(next)
     }
@@ -168,10 +213,10 @@ class GameViewModel @Inject constructor(
     fun onHint() {
         val round = _state.value.round ?: return
         if (_state.value.phase != Phase.Playing) return
-        val (next, target) = RoundRules.hint(round, config)
-        if (target != null) {
+        val (next, ids) = RoundRules.hint(round, config)
+        if (ids.isNotEmpty()) {
             _events.tryEmit(GameEvent.Hint)
-            flash(target, CountyVisual.Hinted, 1_200)
+            ids.forEach { flash(it, CountyVisual.Hinted, 1_200) }
         }
         applyRound(next)
     }
@@ -183,7 +228,10 @@ class GameViewModel @Inject constructor(
     }
 
     /** Back to the start screen after the result dialog. */
-    fun onCloseResult() = _state.update { it.copy(phase = Phase.Idle, round = null, flashes = emptyMap(), elapsedMs = 0) }
+    fun onCloseResult() {
+        clearAllFlashes()
+        _state.update { it.copy(phase = Phase.Idle, round = null, flashes = emptyMap(), elapsedMs = 0, lastGuess = null) }
+    }
 
     private fun applyRound(next: RoundState) {
         var round = next
@@ -206,11 +254,11 @@ class GameViewModel @Inject constructor(
 
     private fun saveResult(round: RoundState, elapsedMs: Long) {
         val result = RoundResult(
-            mode = GameMode.Megyek.key,
+            mode = _state.value.mode.key,
             score = round.score,
             timeMs = elapsedMs,
-            correct = round.correctCount,
-            total = round.total,
+            correct = round.hits,
+            total = round.hitsAvailable,
             hints = round.hintsUsed,
             gaveUp = round.gaveUp,
         )
@@ -231,6 +279,12 @@ class GameViewModel @Inject constructor(
     private fun clearFlash(countyId: String) {
         flashJobs.remove(countyId)?.cancel()
         _state.update { it.copy(flashes = it.flashes - countyId) }
+    }
+
+    private fun clearAllFlashes() {
+        flashJobs.values.forEach { it.cancel() }
+        flashJobs.clear()
+        _state.update { it.copy(flashes = emptyMap()) }
     }
 
     fun setBlindMap(enabled: Boolean) {

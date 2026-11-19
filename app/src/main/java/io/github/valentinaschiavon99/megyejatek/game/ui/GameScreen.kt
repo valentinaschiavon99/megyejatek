@@ -1,5 +1,6 @@
 package io.github.valentinaschiavon99.megyejatek.game.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,11 +47,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.valentinaschiavon99.megyejatek.R
 import io.github.valentinaschiavon99.megyejatek.core.data.map.MapData
 import io.github.valentinaschiavon99.megyejatek.core.security.InputSanitizer
+import io.github.valentinaschiavon99.megyejatek.game.engine.GameMode
+import io.github.valentinaschiavon99.megyejatek.game.engine.PromptKind
+import io.github.valentinaschiavon99.megyejatek.game.engine.Question
 import io.github.valentinaschiavon99.megyejatek.game.engine.RoundState
 import io.github.valentinaschiavon99.megyejatek.map.HungaryMap
 
 @Composable
-fun MegyekScreen(viewModel: GameViewModel = hiltViewModel()) {
+fun GameScreen(mode: GameMode, viewModel: GameViewModel = hiltViewModel(key = "game-${mode.key}")) {
+    LaunchedEffect(mode) { viewModel.selectMode(mode) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val blind by viewModel.blindMap.collectAsStateWithLifecycle()
     val haptics = LocalHapticFeedback.current
@@ -67,12 +72,13 @@ fun MegyekScreen(viewModel: GameViewModel = hiltViewModel()) {
         }
     }
 
-    MegyekContent(
+    GameContent(
         state = state,
         blindMap = blind,
         onBlindMapChange = viewModel::setBlindMap,
         onNewGame = viewModel::onNewGameClick,
         onCountyTap = viewModel::onCountyTap,
+        onMapTap = viewModel::onMapTap,
         onHint = viewModel::onHint,
         onGiveUp = viewModel::onGiveUp,
         onDialogStart = viewModel::onDialogStart,
@@ -87,12 +93,13 @@ fun MegyekScreen(viewModel: GameViewModel = hiltViewModel()) {
 
 /** Stateless so it can be driven directly from UI tests. */
 @Composable
-fun MegyekContent(
+fun GameContent(
     state: GameUiState,
     blindMap: Boolean,
     onBlindMapChange: (Boolean) -> Unit,
     onNewGame: () -> Unit,
     onCountyTap: (String) -> Unit,
+    onMapTap: (Double, Double) -> Unit,
     onHint: () -> Unit,
     onGiveUp: () -> Unit,
     onDialogStart: (String) -> Unit,
@@ -106,6 +113,7 @@ fun MegyekContent(
         return
     }
     val round = state.round
+    val cityMode = round?.current?.kind == PromptKind.FindCity || state.mode == GameMode.Varosok
 
     Column(Modifier.fillMaxSize()) {
         GameHeader(
@@ -116,17 +124,19 @@ fun MegyekContent(
             onBlindMapChange = onBlindMapChange,
         )
         if (state.phase == Phase.Playing && round != null) {
-            PromptBar(data, round, onHint, onGiveUp)
+            PromptBar(data, round, state.lastGuess, onHint, onGiveUp)
         }
         Box(Modifier.weight(1f)) {
             HungaryMap(
                 data = data,
                 countyStates = state.countyStates,
                 blindMap = blindMap,
-                onCountyTap = onCountyTap,
+                onCountyTap = if (cityMode) null else onCountyTap,
+                onMapTap = if (cityMode) { lon, lat, _ -> onMapTap(lon, lat) } else null,
+                guess = state.lastGuess?.guess,
             )
             if (state.phase == Phase.Idle) {
-                StartCard(onNewGame, Modifier.align(Alignment.Center))
+                StartCard(state.mode, onNewGame, Modifier.align(Alignment.Center))
             }
         }
     }
@@ -174,11 +184,39 @@ private fun GameHeader(
     }
 }
 
+/** The small line above the big prompt, and the big prompt itself. */
 @Composable
-private fun PromptBar(data: MapData, round: RoundState, onHint: () -> Unit, onGiveUp: () -> Unit) {
+private fun promptTexts(data: MapData, round: RoundState, q: Question): Pair<String, String> {
+    val progress = stringResource(R.string.game_progress, round.index + 1, round.total)
+    fun countyName(id: String): String {
+        val c = data.countyById[id] ?: return id
+        return if (c.info.isCapital) c.name else "${c.name} megye"
+    }
+    return when (q.kind) {
+        PromptKind.FindCounty ->
+            stringResource(R.string.game_find) + " " + progress to countyName(q.subject)
+        PromptKind.CountyOfSeat ->
+            stringResource(R.string.game_seat_of) + " " + progress to (data.cityById[q.subject]?.name ?: q.subject)
+        PromptKind.NeighboursOf -> stringResource(
+            R.string.game_neighbours_of, round.foundInCurrent.size, q.answers.size,
+        ) + " · " + progress to countyName(q.subject)
+        PromptKind.FindCity ->
+            stringResource(R.string.game_where_is) + " " + progress to (data.cityById[q.subject]?.name ?: q.subject)
+        PromptKind.NextWestToEast ->
+            stringResource(R.string.game_west_to_east) to progress
+    }
+}
+
+@Composable
+private fun PromptBar(
+    data: MapData,
+    round: RoundState,
+    lastGuess: LastGuess?,
+    onHint: () -> Unit,
+    onGiveUp: () -> Unit,
+) {
     val q = round.current ?: return
-    val county = data.countyById[q.answerId]
-    val name = if (county?.info?.isCapital == true) q.prompt else stringResource(R.string.game_county_name, q.prompt)
+    val (small, big) = promptTexts(data, round, q)
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -186,12 +224,24 @@ private fun PromptBar(data: MapData, round: RoundState, onHint: () -> Unit, onGi
     ) {
         Column(Modifier.weight(1f)) {
             Text(
-                stringResource(R.string.game_find) + " " +
-                    stringResource(R.string.game_progress, round.index + 1, round.total),
+                small,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.testTag("prompt"))
+            Text(big, style = MaterialTheme.typography.titleLarge, modifier = Modifier.testTag("prompt"))
+            if (lastGuess != null) {
+                Text(
+                    stringResource(
+                        R.string.game_last_guess,
+                        data.cityById[lastGuess.cityId]?.name.orEmpty(),
+                        lastGuess.km.toInt(),
+                        lastGuess.points,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.testTag("last-guess"),
+                )
+            }
         }
         OutlinedButton(onClick = onHint) {
             Icon(Icons.Outlined.Lightbulb, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -206,18 +256,34 @@ private fun PromptBar(data: MapData, round: RoundState, onHint: () -> Unit, onGi
     }
 }
 
+@StringRes
+private fun GameMode.helpText(): Int = when (this) {
+    GameMode.Megyek -> R.string.game_help_megyek
+    GameMode.Szekhelyek -> R.string.game_help_szekhelyek
+    GameMode.Szomszedok -> R.string.game_help_szomszedok
+    GameMode.Varosok -> R.string.game_help_varosok
+    GameMode.Felsorolas -> R.string.game_help_felsorolas
+    GameMode.Attekintes -> R.string.game_help_megyek
+}
+
 @Composable
-private fun StartCard(onNewGame: () -> Unit, modifier: Modifier = Modifier) {
+private fun StartCard(mode: GameMode, onNewGame: () -> Unit, modifier: Modifier = Modifier) {
     Card(modifier.padding(24.dp).widthIn(max = 420.dp)) {
         Column(
             Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(stringResource(R.string.game_megyek_title), style = MaterialTheme.typography.headlineSmall)
+            Text(mode.title, style = MaterialTheme.typography.headlineSmall)
             Text(
-                stringResource(R.string.game_megyek_help),
+                stringResource(mode.helpText()),
                 style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                stringResource(R.string.game_help_common),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
             Button(onClick = onNewGame) { Text(stringResource(R.string.game_new)) }
@@ -259,7 +325,7 @@ private fun ResultDialog(round: RoundState, elapsedMs: Long, onNewGame: () -> Un
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.result_score, round.score), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.result_time, formatTime(elapsedMs)))
-                Text(stringResource(R.string.result_correct, round.correctCount, round.total))
+                Text(stringResource(R.string.result_correct, round.hits, round.hitsAvailable))
                 if (round.timeBonus > 0) Text(stringResource(R.string.result_time_bonus, round.timeBonus))
                 if (round.hintsUsed > 0) Text(stringResource(R.string.result_hints, round.hintsUsed))
             }

@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -57,6 +58,7 @@ fun HungaryMap(
     onCountyTap: ((countyId: String) -> Unit)? = null,
     onCityTap: ((cityId: String) -> Unit)? = null,
     onMapTap: ((lon: Double, lat: Double, countyId: String?) -> Unit)? = null,
+    guess: MapGuess? = null,
     cityTapTolerance: Dp = 22.dp,
 ) {
     val colors = LocalMapColors.current
@@ -166,6 +168,16 @@ fun HungaryMap(
                 drawCircle(colors.dotFor(cityStates[city.id]), radius, center)
             }
         }
+        if (guess != null) {
+            val from = Offset(viewport.toScreenX(proj.x(guess.tapLon)), viewport.toScreenY(proj.y(guess.tapLat)))
+            val to = Offset(viewport.toScreenX(proj.x(guess.targetLon)), viewport.toScreenY(proj.y(guess.targetLat)))
+            val dash = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx()))
+            drawLine(colors.label, from, to, strokeWidth = 1.5.dp.toPx(), pathEffect = dash, cap = StrokeCap.Round)
+            drawCircle(colors.land, 6.dp.toPx(), from)
+            drawCircle(colors.wrong, 4.5.dp.toPx(), from)
+            drawCircle(colors.land, 7.dp.toPx(), to)
+            drawCircle(colors.correct, 5.5.dp.toPx(), to)
+        }
         if (!blindMap) {
             val style = TextStyle(color = colors.label, fontSize = 10.sp, fontWeight = FontWeight.Medium)
             for (c in data.counties) {
@@ -177,6 +189,9 @@ fun HungaryMap(
         }
     }
 }
+
+/** Városok: where the player tapped and where the city really is. */
+data class MapGuess(val tapLon: Double, val tapLat: Double, val targetLon: Double, val targetLat: Double)
 
 object HungaryMapDefaults {
     /** Space between the canvas edge and the country at zoom 1. */
