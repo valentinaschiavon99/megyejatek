@@ -9,7 +9,12 @@ plugins {
 
 android {
     namespace = "io.github.valentinaschiavon99.megyejatek"
-    compileSdk = 37
+    // Compose 1.13 requires compiling against the API 37.2 minor release.
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 2
+        }
+    }
 
     defaultConfig {
         applicationId = "io.github.valentinaschiavon99.megyejatek"
