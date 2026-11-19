@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2026-11-19",
+  "fetchedAt": null,
+  "kshFile": null,
+  "populationCut": 10000,
+  "cityCount": 20,
+  "simplify": "40%",
+  "attribution": [
+    "Határok, települések és vizek: Natural Earth (közkincs)"
+  ],
+  "interim": true,
+  "note": "Ideiglenes, csak Natural Earth adatokból (megyék, megyeszékhelyek, folyók). A teljes adatot a tools/build_data.py fetch + build állítja elő OSM és KSH alapján."
+}

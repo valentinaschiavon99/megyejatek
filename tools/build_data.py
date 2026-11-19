@@ -559,14 +559,17 @@ def main() -> None:
     for p in (f, b):
         p.add_argument("--cache", type=Path, default=CACHE, help="raw source folder (default: tools/cache)")
     b.add_argument("--out", type=Path, default=ASSETS, help="output folder (default: app assets/map)")
+    b.add_argument("--simplify", default=SIMPLIFY, help="share of vertices to keep (default: 1.5%%)")
     args = ap.parse_args()
-    _set_paths(args.cache, getattr(args, "out", ASSETS))
+    _set_paths(args.cache, getattr(args, "out", ASSETS), getattr(args, "simplify", None))
     args.func(args)
 
 
-def _set_paths(cache: Path, out: Path) -> None:
-    global CACHE, ASSETS
+def _set_paths(cache: Path, out: Path, simplify: str | None) -> None:
+    global CACHE, ASSETS, SIMPLIFY
     CACHE, ASSETS = cache.resolve(), out.resolve()
+    if simplify:
+        SIMPLIFY = simplify
 
 
 if __name__ == "__main__":
