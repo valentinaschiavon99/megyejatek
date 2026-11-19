@@ -1,13 +1,13 @@
 {
   "generatedAt": "2026-11-19",
-  "fetchedAt": null,
-  "kshFile": null,
+  "fetchedAt": "2026-11-19T23:13:49+00:00",
+  "kshFile": "hnt_letoltes_2026.xlsx",
   "populationCut": 10000,
-  "cityCount": 20,
-  "simplify": "40%",
+  "cityCount": 139,
+  "simplify": "1.5%",
   "attribution": [
-    "Határok, települések és vizek: Natural Earth (közkincs)"
-  ],
-  "interim": true,
-  "note": "Ideiglenes, csak Natural Earth adatokból (megyék, megyeszékhelyek, folyók). A teljes adatot a tools/build_data.py fetch + build állítja elő OSM és KSH alapján."
+    "Határok és települések: © OpenStreetMap közreműködők (ODbL)",
+    "Népesség: KSH Helységnévtár",
+    "Folyók és tavak: Natural Earth (közkincs)"
+  ]
 }
