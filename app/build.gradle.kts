@@ -7,6 +7,15 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+/**
+ * Release signing secrets come from environment variables (CI secrets) or ~/.gradle/gradle.properties,
+ * never from the repo. Without them the release build is simply left unsigned.
+ */
+fun secret(name: String): String? =
+    providers.environmentVariable(name).orElse(providers.gradleProperty(name)).orNull?.takeIf { it.isNotBlank() }
+
+val releaseKeystore = secret("MEGYEJATEK_KEYSTORE_PATH")
+
 android {
     namespace = "io.github.valentinaschiavon99.megyejatek"
     // Compose 1.13 requires compiling against the API 37.2 minor release.
@@ -35,10 +44,21 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = secret("MEGYEJATEK_KEYSTORE_PASSWORD")
+                keyAlias = secret("MEGYEJATEK_KEY_ALIAS")
+                keyPassword = secret("MEGYEJATEK_KEY_PASSWORD")
+                enableV3Signing = true
+            }
+        }
     }
 
     buildTypes {
         release {
+            if (releaseKeystore != null) signingConfig = signingConfigs.getByName("release")
+            isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -60,6 +80,26 @@ android {
     androidResources {
         // Map data is read with AssetManager; keep it uncompressed for fast startup reads.
         noCompress += listOf("geojson", "json")
+    }
+
+    lint {
+        // Health check: lint runs in CI and its SARIF report shows up under the repo's Security tab.
+        sarifReport = true
+        htmlReport = true
+        checkDependencies = true
+        abortOnError = true
+        // Security checks that must never be ignored.
+        error += listOf(
+            "HardcodedDebugMode",
+            "SetJavaScriptEnabled",
+            "ExportedService",
+            "ExportedReceiver",
+            "ExportedContentProvider",
+            "TrustAllX509TrustManager",
+            "BadHostnameVerifier",
+            "UnsafeIntentLaunch",
+            "InsecureBaseConfiguration",
+        )
     }
 
     testOptions {
