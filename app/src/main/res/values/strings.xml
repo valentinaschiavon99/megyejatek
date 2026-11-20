@@ -7,6 +7,7 @@
     <string name="nav_play">Játék</string>
     <string name="nav_learn">Tanulj</string>
     <string name="nav_results">Eredmények</string>
+    <string name="nav_settings">Beállítások</string>
 
     <!-- Placeholders until the screens are built -->
 
@@ -101,5 +102,56 @@
     <string name="records_row_detail">%1$s · %2$d/%3$d</string>
     <string name="records_points">%1$d pont</string>
 
-    <string name="placeholder_learn">Tanulj, mielőtt játszol: hamarosan.</string>
+
+    <!-- Tanulj -->
+    <string name="learn_title">Tanulj, mielőtt játszol</string>
+    <string name="learn_counties">Megyék</string>
+    <string name="learn_counties_desc">A 19 megye és Budapest: székhely, szomszédok, városok</string>
+    <string name="learn_neighbours">Szomszédok</string>
+    <string name="learn_neighbours_desc">Ki kivel határos – táblázat és térkép</string>
+    <string name="learn_cities">Városok</string>
+    <string name="learn_cities_desc">A %1$d tízezer főnél nagyobb település lakosság szerint</string>
+    <string name="learn_megye">Megye vagy vármegye?</string>
+    <string name="learn_megye_desc">Mi változott 2023-ban és 2026-ban</string>
+    <string name="learn_faq">Gyakori kérdések</string>
+    <string name="learn_faq_desc">Pontozás, fiók, offline játék</string>
+    <string name="learn_sources">Források</string>
+    <string name="learn_sources_desc">Honnan származnak az adatok</string>
+    <string name="back">Vissza</string>
+    <string name="capital">Főváros</string>
+    <string name="county_seat">Székhely: %1$s</string>
+    <string name="county_summary">%1$d szomszéd · %2$d város</string>
+    <string name="county_neighbours">Szomszédai</string>
+    <string name="county_cities">Tízezer főnél nagyobb települései</string>
+    <string name="county_no_cities">Nincs tízezer főnél nagyobb települése a székhelyen kívül.</string>
+    <string name="pest_note">Pest megye székhelye Budapest, de Budapest nem tartozik Pest megyéhez: a főváros önálló, a megyékkel egyenrangú egység.</string>
+    <string name="budapest_note">Budapest a főváros: nem tartozik egyik megyéhez sem.</string>
+    <string name="city_population">%1$s fő</string>
+    <string name="cities_all">Mind</string>
+    <string name="neighbours_count">%1$d szomszédos pár</string>
+
+    <string name="megye_p1">A vármegye a magyar közigazgatás egyik legrégebbi egysége: ezt a nevet az államalapítástól egészen 1950-ig használták.</string>
+    <string name="megye_p2">1950-ben, a tanácsrendszer bevezetésével a vármegyékből megyék lettek, és ez a név maradt használatban több mint hetven évig.</string>
+    <string name="megye_p3">2023. január 1-jétől az Alaptörvény tizenegyedik módosítása nyomán a megyék hivatalos neve ismét vármegye lett, a vármegyei kormányhivatalok vezetői pedig a főispán címet kapták.</string>
+    <string name="megye_p4">2026. október 1-jétől a 2026. évi XLIX. törvény alapján a hivatalos név újra megye, a főispán helyett pedig ismét kormánymegbízott vezeti a kormányhivatalt.</string>
+    <string name="megye_p5">A játékban ezért a mai hivatalos „megye” szót használjuk. A névváltozások a határokat, a székhelyeket és a számukat nem érintették: ma is 19 megye és a főváros, Budapest alkotja az országot.</string>
+
+    <string name="faq_q1">Hogyan számolódik a pontszám?</string>
+    <string name="faq_a1">Minden jó válasz 100 pontot ér, szorozva a szorzóval. Három egymás utáni jó válasz után a szorzó eggyel nő (legfeljebb ×5); hiba vagy súgás után visszaesik ×1-re. A súgás 50 pontba kerül. Ha nem adod fel, a végén időbónuszt kapsz. A Városok módban a távolság számít: 5 km-en belül teljes pont, 75 km-től nulla.</string>
+    <string name="faq_q2">Kell internet a játékhoz?</string>
+    <string name="faq_a2">Nem. Internet csak a regisztrációhoz, a belépéshez és a globális ranglistához kell. Az internet nélkül lejátszott eredmények később automatikusan felkerülnek.</string>
+    <string name="faq_q3">Elfelejtettem a jelszavam. Mit tegyek?</string>
+    <string name="faq_a3">Mivel nem kérünk e-mail-címet, a jelszót nem lehet visszaállítani. Készíts új fiókot, és használj jelszókezelőt.</string>
+    <string name="faq_q4">Hogyan törölhetem a fiókomat?</string>
+    <string name="faq_a4">A Beállítások fülön a „Fiók törlése” gombbal. A fiókkal együtt a ranglistán szereplő eredményeid is törlődnek.</string>
+    <string name="faq_q5">Miért nem látom a megyék nevét játék közben?</string>
+    <string name="faq_a5">Mert elárulnák a választ. A neveket az Áttekintés módban és itt, a Tanulj fülön látod.</string>
+    <string name="faq_q6">Pest megye székhelye Budapest?</string>
+    <string name="faq_a6">Igen, de Budapest nem része Pest megyének: a főváros önálló, a megyékkel egyenrangú egység. A Székhelyek módban ezért mindkettő jó válasz.</string>
+
+    <string name="sources_osm">Megyehatárok és a települések helye: © OpenStreetMap közreműködők, ODbL licenc (openstreetmap.org/copyright).</string>
+    <string name="sources_ksh">Települések lakossága és megyéje: KSH, Magyarország helységnévtára, 2026. január 1.</string>
+    <string name="sources_ne">Folyók és tavak: Natural Earth (közkincs).</string>
+    <string name="sources_code">A játék forráskódja nyílt (MIT licenc): github.com/valentinaschiavon99/megyejatek</string>
+    <string name="sources_note">A játék szövegei, grafikái és adatai saját munkák vagy a fenti nyílt forrásokból származnak.</string>
 </resources>

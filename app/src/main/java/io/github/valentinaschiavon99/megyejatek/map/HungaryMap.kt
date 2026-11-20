@@ -61,6 +61,10 @@ fun HungaryMap(
     onCityTap: ((cityId: String) -> Unit)? = null,
     onMapTap: ((lon: Double, lat: Double, countyId: String?) -> Unit)? = null,
     guess: MapGuess? = null,
+    /** Straight lines between two places, e.g. neighbouring counties' label points. */
+    links: List<MapLink> = emptyList(),
+    /** False for small previews inside scrolling screens: no zoom, pan or taps. */
+    interactive: Boolean = true,
     cityTapTolerance: Dp = 22.dp,
 ) {
     val colors = LocalMapColors.current
@@ -97,14 +101,7 @@ fun HungaryMap(
     val tappableCities by rememberUpdatedState(visibleCityIds)
     val tolerancePx = with(density) { cityTapTolerance.toPx() }
 
-    Canvas(
-        modifier = modifier
-            .fillMaxSize()
-            .testTag("hungary-map")
-            .onSizeChanged {
-                size = it
-                viewport = viewport.clamped(it.width.toFloat(), it.height.toFloat())
-            }
+    val gestures = if (!interactive) Modifier else Modifier
             .pointerInput(Unit) {
                 detectTransformGestures { centroid, pan, zoom, _ ->
                     viewport = viewport.transformed(
@@ -132,7 +129,17 @@ fun HungaryMap(
                         if (county != null) onCounty?.invoke(county)
                     },
                 )
-            },
+            }
+
+    Canvas(
+        modifier = modifier
+            .fillMaxSize()
+            .testTag("hungary-map")
+            .onSizeChanged {
+                size = it
+                viewport = viewport.clamped(it.width.toFloat(), it.height.toFloat())
+            }
+            .then(gestures),
     ) {
         val p = paths ?: return@Canvas
         val proj = projection ?: return@Canvas
@@ -170,6 +177,18 @@ fun HungaryMap(
                 drawCircle(colors.dotFor(cityStates[city.id]), radius, center)
             }
         }
+        if (links.isNotEmpty()) {
+            val w = 1.6.dp.toPx()
+            for (l in links) {
+                val a = Offset(viewport.toScreenX(proj.x(l.fromLon)), viewport.toScreenY(proj.y(l.fromLat)))
+                val b = Offset(viewport.toScreenX(proj.x(l.toLon)), viewport.toScreenY(proj.y(l.toLat)))
+                drawLine(colors.nationalBorder.copy(alpha = 0.7f), a, b, strokeWidth = w, cap = StrokeCap.Round)
+            }
+            for (l in links) {
+                drawCircle(colors.nationalBorder, 2.5.dp.toPx(), Offset(viewport.toScreenX(proj.x(l.fromLon)), viewport.toScreenY(proj.y(l.fromLat))))
+                drawCircle(colors.nationalBorder, 2.5.dp.toPx(), Offset(viewport.toScreenX(proj.x(l.toLon)), viewport.toScreenY(proj.y(l.toLat))))
+            }
+        }
         if (guess != null) {
             val from = Offset(viewport.toScreenX(proj.x(guess.tapLon)), viewport.toScreenY(proj.y(guess.tapLat)))
             val to = Offset(viewport.toScreenX(proj.x(guess.targetLon)), viewport.toScreenY(proj.y(guess.targetLat)))
@@ -189,8 +208,15 @@ fun HungaryMap(
                 drawText(layout, topLeft = Offset(x, y))
             }
         }
+
+        // ODbL attribution for the OpenStreetMap boundaries.
+        val credit = textMeasurer.measure("© OpenStreetMap", TextStyle(color = colors.label.copy(alpha = 0.6f), fontSize = 8.sp))
+        drawText(credit, topLeft = Offset(this.size.width - credit.size.width - 4.dp.toPx(), this.size.height - credit.size.height - 2.dp.toPx()))
     }
 }
+
+/** A straight line on the map, in lon/lat. */
+data class MapLink(val fromLon: Double, val fromLat: Double, val toLon: Double, val toLat: Double)
 
 /** Városok: where the player tapped and where the city really is. */
 data class MapGuess(val tapLon: Double, val tapLat: Double, val targetLon: Double, val targetLat: Double)

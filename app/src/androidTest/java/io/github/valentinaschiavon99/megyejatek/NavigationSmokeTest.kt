@@ -2,6 +2,7 @@ package io.github.valentinaschiavon99.megyejatek
 
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -22,7 +23,9 @@ class NavigationSmokeTest {
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("hungary-map").fetchSemanticsNodes().isNotEmpty() }
 
         compose.onNodeWithText("Tanulj").performClick()
-        compose.onNodeWithText("Tanulj, mielőtt játszol: hamarosan.").assertExists()
+        compose.onNodeWithText("Tanulj, mielőtt játszol").assertExists()
+        compose.onNodeWithText("Megye vagy vármegye?").performClick()
+        compose.onNodeWithContentDescription("Vissza").assertExists()
 
         compose.onNodeWithText("Eredmények").performClick()
         compose.onNodeWithText("Saját rekordjaim").assertExists()
