@@ -35,7 +35,7 @@
     <string name="game_help_felsorolas">Sorold fel az összes megyét és Budapestet nyugatról keletre: mindig a következőre koppints.</string>
     <string name="game_help_common">Egymás utáni jó válaszokért nő a szorzó; hiba vagy súgás után újra ×1.</string>
     <string name="game_progress">%1$d/%2$d</string>
-    <string name="game_multiplier">×%1$d pont</string>
+    <string name="game_multiplier">×%1$d</string>
     <string name="game_score">%1$d pont</string>
     <string name="game_hint">Súgás</string>
     <string name="game_give_up">Feladom</string>

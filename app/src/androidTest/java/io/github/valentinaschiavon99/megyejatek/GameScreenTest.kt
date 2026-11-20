@@ -66,7 +66,7 @@ class GameScreenTest {
                 )
             }
         }
-        compose.onNodeWithTag("multiplier").assertTextEquals("×1 pont")
+        compose.onNodeWithTag("multiplier").assertTextEquals("×1")
         compose.onNodeWithTag("timer").assertTextEquals("0:00")
         return round
     }

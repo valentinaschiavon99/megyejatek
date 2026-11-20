@@ -202,8 +202,9 @@ private fun GameHeader(state: GameUiState, blindMap: Boolean, onBlindMapChange: 
     val scheme = MaterialTheme.colorScheme
     Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatPill(Icons.Outlined.Timer, scheme.surfaceContainerHigh, scheme.onSurfaceVariant) {
-                Text(formatTime(state.elapsedMs), style = MaterialTheme.typography.labelLarge, modifier = Modifier.testTag("timer"))
+            // Pills merge their children, so test tags go on the pill itself.
+            StatPill(Icons.Outlined.Timer, scheme.surfaceContainerHigh, scheme.onSurfaceVariant, Modifier.testTag("timer")) {
+                Text(formatTime(state.elapsedMs), style = MaterialTheme.typography.labelLarge)
             }
             MultiplierBadge(
                 state.multiplier,
@@ -211,13 +212,12 @@ private fun GameHeader(state: GameUiState, blindMap: Boolean, onBlindMapChange: 
                 modifier = Modifier.testTag("multiplier"),
             )
             Box(contentAlignment = Alignment.Center) {
-                StatPill(Icons.Rounded.EmojiEvents, scheme.primary, scheme.onPrimary) {
+                StatPill(Icons.Rounded.EmojiEvents, scheme.primary, scheme.onPrimary, Modifier.testTag("score")) {
                     AnimatedNumber(
                         value = round?.score ?: 0,
                         style = MaterialTheme.typography.labelLarge,
                         color = scheme.onPrimary,
                         suffix = " " + stringResource(R.string.points_short),
-                        modifier = Modifier.testTag("score"),
                     )
                 }
                 PointsPopup(state.award?.points, state.award?.id ?: 0L, Modifier.align(Alignment.TopCenter))

@@ -141,6 +141,7 @@ jobs:
           api-level: 35
           arch: x86_64
           target: google_apis
+          profile: pixel_6 # 1080×2400, so the README screenshots are sharp
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           script: ./gradlew connectedDebugAndroidTest --stacktrace
