@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -152,6 +153,10 @@ fun HungaryMap(
             translate(viewport.offsetX, viewport.offsetY)
             scale(s, s, pivot = Offset.Zero)
         }) {
+            // Soft drop shadow under the country, so the map lifts off the paper.
+            translate(2.dp.toPx() / s, 4.dp.toPx() / s) {
+                drawPath(p.outline, colors.shadow)
+            }
             for (c in data.counties) {
                 drawPath(p.counties.getValue(c.id), fills.getValue(c.id).value)
             }

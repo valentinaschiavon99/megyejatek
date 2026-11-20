@@ -1,6 +1,16 @@
 package io.github.valentinaschiavon99.megyejatek.navigation
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.res.Configuration
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -52,7 +62,10 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
         }
     }
 
+    ImmersiveInLandscape(landscape)
+
     Scaffold(
+        contentWindowInsets = WindowInsets.safeDrawing,
         bottomBar = {
             if (!landscape) {
                 NavigationBar {
@@ -130,3 +143,25 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
 
 private fun NavDestination?.isOn(dest: TopLevelDestination): Boolean =
     this?.hierarchy?.any { it.hasRoute(dest.route::class) } == true
+
+/** On its side the phone is a game board: hide the status and navigation bars (swipe to peek). */
+@Composable
+private fun ImmersiveInLandscape(landscape: Boolean) {
+    val view = LocalView.current
+    DisposableEffect(landscape) {
+        val window = view.context.findActivity()?.window
+        if (window != null) {
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            if (landscape) controller.hide(WindowInsetsCompat.Type.systemBars())
+            else controller.show(WindowInsetsCompat.Type.systemBars())
+        }
+        onDispose { }
+    }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}

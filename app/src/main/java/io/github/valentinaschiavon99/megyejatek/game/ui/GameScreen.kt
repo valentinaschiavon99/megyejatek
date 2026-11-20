@@ -2,6 +2,7 @@ package io.github.valentinaschiavon99.megyejatek.game.ui
 
 import android.content.res.Configuration
 import androidx.annotation.StringRes
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,16 +22,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconToggleButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,15 +52,23 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.valentinaschiavon99.megyejatek.R
 import io.github.valentinaschiavon99.megyejatek.core.data.map.MapData
 import io.github.valentinaschiavon99.megyejatek.core.security.InputSanitizer
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.AnimatedNumber
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.Confetti
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.IconBadge
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.MultiplierBadge
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.PointsPopup
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.SlidingText
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.StarRating
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.StatPill
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.icon
 import io.github.valentinaschiavon99.megyejatek.game.engine.GameMode
 import io.github.valentinaschiavon99.megyejatek.game.engine.PromptKind
 import io.github.valentinaschiavon99.megyejatek.game.engine.Question
@@ -61,7 +76,11 @@ import io.github.valentinaschiavon99.megyejatek.game.engine.RoundState
 import io.github.valentinaschiavon99.megyejatek.map.HungaryMap
 
 @Composable
-fun GameScreen(mode: GameMode, viewModel: GameViewModel = hiltViewModel(key = "game-${mode.key}")) {
+fun GameScreen(
+    mode: GameMode,
+    modePicker: @Composable () -> Unit = {},
+    viewModel: GameViewModel = hiltViewModel(key = "game-${mode.key}"),
+) {
     LaunchedEffect(mode) { viewModel.selectMode(mode) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val blind by viewModel.blindMap.collectAsStateWithLifecycle()
@@ -95,10 +114,11 @@ fun GameScreen(mode: GameMode, viewModel: GameViewModel = hiltViewModel(key = "g
             viewModel.onNewGameClick()
         },
         onResultClose = viewModel::onCloseResult,
+        modePicker = modePicker,
     )
 }
 
-/** Stateless so it can be driven directly from UI tests. */
+/** Stateless so it can be driven directly from UI tests and screenshot tests. */
 @Composable
 fun GameContent(
     state: GameUiState,
@@ -113,6 +133,7 @@ fun GameContent(
     onDialogDismiss: () -> Unit,
     onResultNewGame: () -> Unit,
     onResultClose: () -> Unit,
+    modePicker: @Composable () -> Unit = {},
 ) {
     val data = state.data
     if (data == null) {
@@ -120,21 +141,10 @@ fun GameContent(
         return
     }
     val round = state.round
+    val playing = state.phase == Phase.Playing && round != null
     val cityMode = round?.current?.kind == PromptKind.FindCity || state.mode == GameMode.Varosok
-
     val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val panel: @Composable () -> Unit = {
-        GameHeader(
-            elapsedMs = state.elapsedMs,
-            multiplier = state.multiplier,
-            score = round?.score ?: 0,
-            blindMap = blindMap,
-            onBlindMapChange = onBlindMapChange,
-        )
-        if (state.phase == Phase.Playing && round != null) {
-            PromptBar(data, round, state.lastGuess, onHint, onGiveUp)
-        }
-    }
+
     val map: @Composable (Modifier) -> Unit = { m ->
         Box(m) {
             HungaryMap(
@@ -146,21 +156,34 @@ fun GameContent(
                 onMapTap = if (cityMode) { lon, lat, _ -> onMapTap(lon, lat) } else null,
                 guess = state.lastGuess?.guess,
             )
-            if (state.phase == Phase.Idle) {
-                StartCard(state.mode, onNewGame, Modifier.align(Alignment.Center))
+            if (state.phase == Phase.Idle && !landscape) {
+                StartCard(state.mode, state.best, onNewGame, Modifier.align(Alignment.Center).padding(20.dp))
             }
         }
     }
 
     if (landscape) {
-        // Phone on its side: controls on the left, the map gets the full height on the right.
+        // Phone on its side: everything to read and press on the left, the map at full height on the right.
         Row(Modifier.fillMaxSize()) {
-            Column(Modifier.width(340.dp).fillMaxHeight().verticalScroll(rememberScrollState())) { panel() }
+            Column(
+                Modifier.width(320.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                modePicker()
+                GameHeader(state, blindMap, onBlindMapChange)
+                if (playing) {
+                    PromptCard(data, state.mode, round!!, state.lastGuess, onHint, onGiveUp, compact = true)
+                } else if (state.phase == Phase.Idle) {
+                    StartCard(state.mode, state.best, onNewGame, Modifier.padding(horizontal = 12.dp), compact = true)
+                }
+            }
             map(Modifier.weight(1f).fillMaxHeight())
         }
     } else {
         Column(Modifier.fillMaxSize()) {
-            panel()
+            modePicker()
+            GameHeader(state, blindMap, onBlindMapChange)
+            if (playing) PromptCard(data, state.mode, round!!, state.lastGuess, onHint, onGiveUp, compact = false)
             map(Modifier.weight(1f))
         }
     }
@@ -169,41 +192,55 @@ fun GameContent(
         NewGameDialog(onStart = onDialogStart, onDismiss = onDialogDismiss)
     }
     if (state.phase == Phase.Finished && round != null) {
-        ResultDialog(round, state.elapsedMs, onNewGame = onResultNewGame, onClose = onResultClose)
+        ResultDialog(state, round, onNewGame = onResultNewGame, onClose = onResultClose)
     }
 }
 
 @Composable
-private fun GameHeader(
-    elapsedMs: Long,
-    multiplier: Int,
-    score: Int,
-    blindMap: Boolean,
-    onBlindMapChange: (Boolean) -> Unit,
-) {
-    Surface(tonalElevation = 2.dp) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Icon(Icons.Outlined.Timer, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(formatTime(elapsedMs), style = MaterialTheme.typography.labelLarge, modifier = Modifier.testTag("timer"))
-            Text(
-                stringResource(R.string.game_multiplier, multiplier),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.secondary,
+private fun GameHeader(state: GameUiState, blindMap: Boolean, onBlindMapChange: (Boolean) -> Unit) {
+    val round = state.round
+    val scheme = MaterialTheme.colorScheme
+    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatPill(Icons.Outlined.Timer, scheme.surfaceContainerHigh, scheme.onSurfaceVariant) {
+                Text(formatTime(state.elapsedMs), style = MaterialTheme.typography.labelLarge, modifier = Modifier.testTag("timer"))
+            }
+            MultiplierBadge(
+                state.multiplier,
+                label = stringResource(R.string.game_multiplier, state.multiplier),
                 modifier = Modifier.testTag("multiplier"),
             )
-            Text(
-                stringResource(R.string.game_score, score),
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.testTag("score"),
-            )
+            Box(contentAlignment = Alignment.Center) {
+                StatPill(Icons.Rounded.EmojiEvents, scheme.primary, scheme.onPrimary) {
+                    AnimatedNumber(
+                        value = round?.score ?: 0,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = scheme.onPrimary,
+                        suffix = " " + stringResource(R.string.points_short),
+                        modifier = Modifier.testTag("score"),
+                    )
+                }
+                PointsPopup(state.award?.points, state.award?.id ?: 0L, Modifier.align(Alignment.TopCenter))
+            }
             Spacer(Modifier.weight(1f))
-            Text(stringResource(R.string.blind_map), style = MaterialTheme.typography.labelMedium)
-            Switch(checked = blindMap, onCheckedChange = onBlindMapChange)
+            FilledTonalIconToggleButton(checked = blindMap, onCheckedChange = onBlindMapChange) {
+                Icon(
+                    if (blindMap) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    contentDescription = stringResource(R.string.blind_map),
+                )
+            }
+        }
+        if (round != null && state.phase != Phase.Idle) {
+            val target = (round.index.toFloat() / round.total.coerceAtLeast(1)).coerceIn(0f, 1f)
+            val progress by animateFloatAsState(target, label = "progress")
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp).height(6.dp),
+                color = scheme.secondary,
+                trackColor = scheme.surfaceContainerHigh,
+                gapSize = 0.dp,
+                drawStopIndicator = {},
+            )
         }
     }
 }
@@ -232,53 +269,54 @@ private fun promptTexts(data: MapData, round: RoundState, q: Question): Pair<Str
 }
 
 @Composable
-private fun PromptBar(
+private fun PromptCard(
     data: MapData,
+    mode: GameMode,
     round: RoundState,
     lastGuess: LastGuess?,
     onHint: () -> Unit,
     onGiveUp: () -> Unit,
+    compact: Boolean,
 ) {
     val q = round.current ?: return
     val (small, big) = promptTexts(data, round, q)
-    Column(
-        Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
-        Text(
-            small,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            big,
-            style = MaterialTheme.typography.titleLarge,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.testTag("prompt"),
-        )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                lastGuess?.let {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (!compact) IconBadge(mode.icon, size = 44.dp)
+                Column(Modifier.weight(1f)) {
+                    Text(small, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    SlidingText(big, MaterialTheme.typography.titleLarge, Modifier.testTag("prompt"))
+                }
+            }
+            if (lastGuess != null) {
+                Text(
                     stringResource(
                         R.string.game_last_guess,
-                        data.cityById[it.cityId]?.name.orEmpty(),
-                        it.km.toInt(),
-                        it.points,
-                    )
-                }.orEmpty(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f).testTag("last-guess"),
-            )
-            OutlinedButton(onClick = onHint) {
-                Icon(Icons.Outlined.Lightbulb, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.size(6.dp))
-                Text(stringResource(R.string.game_hint))
+                        data.cityById[lastGuess.cityId]?.name.orEmpty(),
+                        lastGuess.km.toInt(),
+                        lastGuess.points,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.testTag("last-guess"),
+                )
             }
-            TextButton(onClick = onGiveUp) {
-                Icon(Icons.Outlined.Flag, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.size(6.dp))
-                Text(stringResource(R.string.game_give_up))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                FilledTonalButton(onClick = onHint) {
+                    Icon(Icons.Outlined.Lightbulb, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.size(6.dp))
+                    Text(stringResource(R.string.game_hint))
+                }
+                TextButton(onClick = onGiveUp) {
+                    Icon(Icons.Outlined.Flag, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.size(6.dp))
+                    Text(stringResource(R.string.game_give_up))
+                }
             }
         }
     }
@@ -295,26 +333,40 @@ private fun GameMode.helpText(): Int = when (this) {
 }
 
 @Composable
-private fun StartCard(mode: GameMode, onNewGame: () -> Unit, modifier: Modifier = Modifier) {
-    Card(modifier.padding(24.dp).widthIn(max = 420.dp)) {
+private fun StartCard(mode: GameMode, best: Int?, onNewGame: () -> Unit, modifier: Modifier = Modifier, compact: Boolean = false) {
+    Card(
+        modifier.widthIn(max = 420.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+    ) {
         Column(
-            Modifier.padding(20.dp),
+            Modifier.padding(if (compact) 16.dp else 24.dp).fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(mode.title, style = MaterialTheme.typography.headlineSmall)
-            Text(
-                stringResource(mode.helpText()),
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                stringResource(R.string.game_help_common),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            Button(onClick = onNewGame) { Text(stringResource(R.string.game_new)) }
+            IconBadge(mode.icon, size = if (compact) 52.dp else 72.dp)
+            Text(mode.title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("start-title"))
+            Text(stringResource(mode.helpText()), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+            if (!compact) {
+                Text(
+                    stringResource(R.string.game_help_common),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            if (best != null) {
+                StatPill(Icons.Rounded.EmojiEvents, MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer) {
+                    Text(
+                        stringResource(R.string.game_best, best),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
+            }
+            Button(onClick = onNewGame, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                Text(stringResource(R.string.game_new), style = MaterialTheme.typography.titleMedium)
+            }
         }
     }
 }
@@ -343,24 +395,66 @@ private fun NewGameDialog(onStart: (String) -> Unit, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun ResultDialog(round: RoundState, elapsedMs: Long, onNewGame: () -> Unit, onClose: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onClose,
-        title = {
-            Text(stringResource(if (round.gaveUp) R.string.result_title_gave_up else R.string.result_title_done))
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.result_score, round.score), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.result_time, formatTime(elapsedMs)))
-                Text(stringResource(R.string.result_correct, round.hits, round.hitsAvailable))
-                if (round.timeBonus > 0) Text(stringResource(R.string.result_time_bonus, round.timeBonus))
-                if (round.hintsUsed > 0) Text(stringResource(R.string.result_hints, round.hintsUsed))
+private fun ResultDialog(state: GameUiState, round: RoundState, onNewGame: () -> Unit, onClose: () -> Unit) {
+    Dialog(onDismissRequest = onClose) {
+        Box {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+                shape = MaterialTheme.shapes.extraLarge,
+            ) {
+                Column(
+                    Modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()).testTag("result"),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        stringResource(if (round.gaveUp) R.string.result_title_gave_up else R.string.result_title_done),
+                        style = MaterialTheme.typography.headlineSmall,
+                    )
+                    StarRating(state.stars)
+                    AnimatedNumber(
+                        value = round.score,
+                        style = MaterialTheme.typography.displayMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(stringResource(R.string.points_long), style = MaterialTheme.typography.labelLarge)
+                    if (state.newRecord) {
+                        StatPill(Icons.Rounded.EmojiEvents, MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.onSecondary) {
+                            Text(
+                                stringResource(R.string.result_new_record),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSecondary,
+                            )
+                        }
+                    }
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                    ResultRow(stringResource(R.string.result_label_time), formatTime(state.elapsedMs))
+                    ResultRow(stringResource(R.string.result_label_correct), "${round.hits} / ${round.hitsAvailable}")
+                    if (round.timeBonus > 0) ResultRow(stringResource(R.string.result_label_bonus), "+${round.timeBonus}")
+                    if (round.hintsUsed > 0) ResultRow(stringResource(R.string.result_label_hints), round.hintsUsed.toString())
+                    Spacer(Modifier.height(4.dp))
+                    Button(onClick = onNewGame, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                        Text(stringResource(R.string.game_new), style = MaterialTheme.typography.titleMedium)
+                    }
+                    TextButton(onClick = onClose) { Text(stringResource(R.string.dialog_close)) }
+                }
             }
-        },
-        confirmButton = { Button(onClick = onNewGame) { Text(stringResource(R.string.game_new)) } },
-        dismissButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.dialog_close)) } },
-    )
+            if (state.stars == 3 || state.newRecord) Confetti(Modifier.matchParentSize())
+        }
+    }
+}
+
+@Composable
+private fun ResultRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth()) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        Text(value, style = MaterialTheme.typography.titleMedium)
+    }
 }
 
 /** m:ss */

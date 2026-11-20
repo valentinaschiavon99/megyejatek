@@ -182,4 +182,12 @@
     <string name="update_dialog_title">Új verzió érhető el</string>
     <string name="update_dialog_text">Elérhető a Megyejáték %1$s verziója. Letöltöd most?</string>
     <string name="update_later">Később</string>
+    <string name="points_short">pont</string>
+    <string name="points_long">pontot szereztél</string>
+    <string name="game_best">Legjobb: %1$d pont</string>
+    <string name="result_new_record">Új rekord!</string>
+    <string name="result_label_time">Idő</string>
+    <string name="result_label_correct">Jó válaszok</string>
+    <string name="result_label_bonus">Időbónusz</string>
+    <string name="result_label_hints">Súgások</string>
 </resources>

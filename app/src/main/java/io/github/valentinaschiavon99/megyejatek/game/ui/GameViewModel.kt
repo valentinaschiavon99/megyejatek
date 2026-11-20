@@ -45,6 +45,9 @@ enum class Phase { Idle, Playing, Finished }
 /** Short-lived feedback for the UI (haptics). */
 enum class GameEvent { Correct, Wrong, Hint, Finished }
 
+/** Points just earned; [id] changes every time so the "+N" animation replays. */
+data class Award(val points: Int, val id: Long)
+
 /** Result of the last Városok guess, shown on the map and under the prompt. */
 data class LastGuess(val cityId: String, val guess: MapGuess, val km: Double, val points: Int, val good: Boolean)
 
@@ -60,7 +63,25 @@ data class GameUiState(
     val lastGuess: LastGuess? = null,
     val showNewGameDialog: Boolean = false,
     val playerName: String? = null,
+    val award: Award? = null,
+    /** Best completed score in this mode on this phone, for the start card and "Új rekord!". */
+    val best: Int? = null,
+    val newRecord: Boolean = false,
 ) {
+    /** 0–3 stars for the result screen, by the share of correct answers. */
+    val stars: Int
+        get() {
+            val r = round ?: return 0
+            if (r.gaveUp || r.hitsAvailable == 0) return 0
+            val ratio = r.hits.toDouble() / r.hitsAvailable
+            return when {
+                ratio >= 0.95 && r.hintsUsed == 0 -> 3
+                ratio >= 0.75 -> 2
+                ratio >= 0.4 -> 1
+                else -> 0
+            }
+        }
+
     val countyStates: Map<String, CountyVisual>
         get() {
             val r = round ?: return flashes
@@ -106,6 +127,8 @@ class GameViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     private var startedAt = 0L
+    private var awardIds = 0L
+    private var bestJob: Job? = null
     private var timerJob: Job? = null
     private val flashJobs = mutableMapOf<String, Job>()
 
@@ -120,6 +143,13 @@ class GameViewModel @Inject constructor(
     /** Called once by the screen; a view model instance is kept per mode. */
     fun selectMode(mode: GameMode) {
         if (_state.value.mode != mode && _state.value.phase == Phase.Idle) _state.update { it.copy(mode = mode) }
+        if (bestJob == null) {
+            bestJob = viewModelScope.launch {
+                scores.personalBest(_state.value.mode.key, limit = 1).collect { list ->
+                    _state.update { it.copy(best = list.firstOrNull()?.score) }
+                }
+            }
+        }
     }
 
     /**
@@ -153,6 +183,8 @@ class GameViewModel @Inject constructor(
                 multiplier = 1,
                 flashes = emptyMap(),
                 lastGuess = null,
+                award = null,
+                newRecord = false,
             )
         }
         startedAt = SystemClock.elapsedRealtime()
@@ -173,6 +205,7 @@ class GameViewModel @Inject constructor(
         when (result) {
             is TapResult.Correct -> {
                 _events.tryEmit(GameEvent.Correct)
+                _state.update { it.copy(award = Award(result.points, ++awardIds)) }
                 clearFlash(result.answerId) // a running hint flash must not hide the green
             }
             is TapResult.Wrong -> {
@@ -205,7 +238,10 @@ class GameViewModel @Inject constructor(
         _events.tryEmit(if (result.good) GameEvent.Correct else GameEvent.Wrong)
         clearAllFlashes()
         _state.update {
-            it.copy(lastGuess = LastGuess(city.id, MapGuess(lon, lat, city.lon, city.lat), km, result.points, result.good))
+            it.copy(
+                lastGuess = LastGuess(city.id, MapGuess(lon, lat, city.lon, city.lat), km, result.points, result.good),
+                award = if (result.points > 0) Award(result.points, ++awardIds) else it.award,
+            )
         }
         applyRound(next)
     }
@@ -239,7 +275,10 @@ class GameViewModel @Inject constructor(
             timerJob?.cancel()
             val elapsed = SystemClock.elapsedRealtime() - startedAt
             round = RoundRules.complete(round, elapsed, config)
-            _state.update { it.copy(elapsedMs = elapsed) }
+            val previousBest = _state.value.best
+            _state.update {
+                it.copy(elapsedMs = elapsed, newRecord = !round.gaveUp && round.score > 0 && round.score > (previousBest ?: 0))
+            }
             _events.tryEmit(GameEvent.Finished)
             saveResult(round, elapsed)
         }

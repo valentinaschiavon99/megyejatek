@@ -1,21 +1,32 @@
 package io.github.valentinaschiavon99.megyejatek.play
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalIconToggleButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -28,7 +39,7 @@ import java.text.NumberFormat
 import java.util.Locale
 
 @Composable
-fun OverviewScreen(viewModel: OverviewViewModel = hiltViewModel()) {
+fun OverviewScreen(modePicker: @Composable () -> Unit = {}, viewModel: OverviewViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val blind by viewModel.blindMap.collectAsStateWithLifecycle()
     val data = state.data
@@ -40,18 +51,34 @@ fun OverviewScreen(viewModel: OverviewViewModel = hiltViewModel()) {
         data == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
-        else -> Column(Modifier.fillMaxSize()) {
-            InfoBar(data, state.selectedCountyId, state.selectedCityId, blind, viewModel::setBlindMap)
-            HungaryMap(
-                data = data,
-                modifier = Modifier.weight(1f),
-                countyStates = overviewStates(data, state.selectedCountyId),
-                cityStates = state.selectedCityId?.let { mapOf(it to CountyVisual.Correct) }.orEmpty(),
-                showCities = true,
-                blindMap = blind,
-                onCountyTap = viewModel::onCountyTap,
-                onCityTap = viewModel::onCityTap,
-            )
+        else -> {
+            val map: @Composable (Modifier) -> Unit = { m ->
+                HungaryMap(
+                    data = data,
+                    modifier = m,
+                    countyStates = overviewStates(data, state.selectedCountyId),
+                    cityStates = state.selectedCityId?.let { mapOf(it to CountyVisual.Correct) }.orEmpty(),
+                    showCities = true,
+                    blindMap = blind,
+                    onCountyTap = viewModel::onCountyTap,
+                    onCityTap = viewModel::onCityTap,
+                )
+            }
+            if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                Row(Modifier.fillMaxSize()) {
+                    Column(Modifier.width(320.dp).fillMaxHeight().verticalScroll(rememberScrollState())) {
+                        modePicker()
+                        InfoBar(data, state.selectedCountyId, state.selectedCityId, blind, viewModel::setBlindMap)
+                    }
+                    map(Modifier.weight(1f).fillMaxHeight())
+                }
+            } else {
+                Column(Modifier.fillMaxSize()) {
+                    modePicker()
+                    InfoBar(data, state.selectedCountyId, state.selectedCityId, blind, viewModel::setBlindMap)
+                    map(Modifier.weight(1f))
+                }
+            }
         }
     }
 }
@@ -67,9 +94,13 @@ private fun InfoBar(
     val county = countyId?.let { data.countyById[it] }
     val city = cityId?.let { data.cityById[it] }
     val numbers = NumberFormat.getIntegerInstance(Locale.forLanguageTag("hu"))
-    Surface(tonalElevation = 2.dp) {
+    Card(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -80,7 +111,7 @@ private fun InfoBar(
                         county != null -> county.name
                         else -> stringResource(R.string.map_tap_hint)
                     },
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                 )
                 val detail = when {
                     city != null -> stringResource(
@@ -112,8 +143,12 @@ private fun InfoBar(
                     }
                 }
             }
-            Text(stringResource(R.string.blind_map), style = MaterialTheme.typography.labelLarge)
-            Switch(checked = blind, onCheckedChange = onBlindChange)
+            FilledTonalIconToggleButton(checked = blind, onCheckedChange = onBlindChange) {
+                Icon(
+                    if (blind) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    contentDescription = stringResource(R.string.blind_map),
+                )
+            }
         }
     }
 }

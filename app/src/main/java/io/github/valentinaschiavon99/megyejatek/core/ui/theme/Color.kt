@@ -2,14 +2,18 @@ package io.github.valentinaschiavon99.megyejatek.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Brand palette: ink blue + warm paper + amber accent. Green and red are reserved
-// for right/wrong answers, so neither is used as a brand colour.
-internal val Ink = Color(0xFF1F3A5F)
-internal val InkLight = Color(0xFF9EC1EE)
-internal val Paper = Color(0xFFF8F6F1)
-internal val PaperDark = Color(0xFF14171C)
-internal val Amber = Color(0xFFE8A33D)
-internal val AmberDark = Color(0xFFF3BE6A)
+// Palette: deep ink blue, warm map paper and a paprika-gold accent. Green and red are kept
+// for right and wrong answers only, so neither is used as a brand colour.
+internal val Ink = Color(0xFF1B2A44)
+internal val InkSoft = Color(0xFF2C4166)
+internal val InkLight = Color(0xFFA9C4EC)
+internal val Paper = Color(0xFFF7F1E4)
+internal val PaperDeep = Color(0xFFEFE5D0)
+internal val PaperDark = Color(0xFF11161F)
+internal val SurfaceDark = Color(0xFF19202B)
+internal val Amber = Color(0xFFE09A2D)
+internal val AmberDark = Color(0xFFF2B85C)
+internal val Plum = Color(0xFF7A5BC2)
 
 /** Colours with a fixed meaning on the map. */
 data class MapColors(
@@ -17,6 +21,7 @@ data class MapColors(
     val countyBorder: Color,
     val nationalBorder: Color,
     val water: Color,
+    val shadow: Color,
     val highlighted: Color,
     val correct: Color,
     val wrong: Color,
@@ -25,25 +30,27 @@ data class MapColors(
 )
 
 internal val LightMapColors = MapColors(
-    land = Color(0xFFEDE6D6),
-    countyBorder = Color(0xFF8C8577),
-    nationalBorder = Color(0xFF3B3833),
-    water = Color(0xFF5B9BD5),
-    highlighted = Color(0xFFF2C14E),
-    correct = Color(0xFF3FA34D),
-    wrong = Color(0xFFD64545),
-    hinted = Color(0xFF7E6BC4),
+    land = Color(0xFFF3E9D2),
+    countyBorder = Color(0xFFB3A587),
+    nationalBorder = Color(0xFF2E2A24),
+    water = Color(0xFF4F95D6),
+    shadow = Color(0x33452F10),
+    highlighted = Color(0xFFF3BE45),
+    correct = Color(0xFF3FA65A),
+    wrong = Color(0xFFDB4B4B),
+    hinted = Color(0xFF8A6FD6),
     label = Color(0xFF2B2924),
 )
 
 internal val DarkMapColors = MapColors(
-    land = Color(0xFF2A2D33),
-    countyBorder = Color(0xFF6D6A63),
-    nationalBorder = Color(0xFFD9D4C7),
-    water = Color(0xFF4F86B8),
-    highlighted = Color(0xFFC99A2E),
-    correct = Color(0xFF4CAF5C),
-    wrong = Color(0xFFE05A5A),
-    hinted = Color(0xFF9C8BE0),
+    land = Color(0xFF2A313D),
+    countyBorder = Color(0xFF59606C),
+    nationalBorder = Color(0xFFE7E1D3),
+    water = Color(0xFF4E8BC4),
+    shadow = Color(0x66000000),
+    highlighted = Color(0xFFD9A433),
+    correct = Color(0xFF4FB86A),
+    wrong = Color(0xFFE56060),
+    hinted = Color(0xFF9F89E8),
     label = Color(0xFFEDE8DC),
 )
