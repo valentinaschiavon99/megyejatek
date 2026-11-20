@@ -11,6 +11,8 @@
 
 The app does not read your location, contacts or files, and shows no ads. Nothing is backed up to the cloud by Android.
 
-**Deleting your data:** open an issue on GitHub or contact the developer through her GitHub profile, and the account and its scores will be deleted. An in-app "delete account" button is planned.
+**Deleting your data:** Beállítások → Fiók törlése deletes your account and every score it posted, right away. Scores kept on your phone are removed too.
+
+**Update check:** the app asks GitHub whether a newer version exists. This request carries no personal data.
 
 Sources of the map data are listed in [DATA_SOURCES.md](DATA_SOURCES.md).

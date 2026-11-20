@@ -42,6 +42,9 @@ interface ScoreDao {
         """,
     )
     fun best(mode: String, uid: String?, limit: Int): Flow<List<ScoreEntity>>
+
+    @Query("DELETE FROM scores WHERE uid = :uid")
+    suspend fun deleteForUser(uid: String): Int
 }
 
 @Database(entities = [ScoreEntity::class], version = 1, exportSchema = true)

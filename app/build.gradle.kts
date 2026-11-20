@@ -28,6 +28,10 @@ fun secret(name: String): String? =
 
 val releaseKeystore = secret("MEGYEJATEK_KEYSTORE_PATH")
 
+/** CI passes the workflow run number and commit, so every published APK has a higher versionCode. */
+val buildNumber = providers.gradleProperty("versionCode").orNull?.toIntOrNull() ?: 1
+val gitSha = providers.gradleProperty("gitSha").orNull?.take(7) ?: "local"
+
 android {
     namespace = "io.github.valentinaschiavon99.megyejatek"
     // Compose 1.13 requires compiling against the API 37.2 minor release.
@@ -41,8 +45,14 @@ android {
         applicationId = "io.github.valentinaschiavon99.megyejatek"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = buildNumber
+        versionName = "0.$buildNumber"
+        buildConfigField("String", "GIT_SHA", "\"$gitSha\"")
+        buildConfigField(
+            "String",
+            "UPDATE_INFO_URL",
+            "\"https://github.com/valentinaschiavon99/megyejatek/releases/download/latest/version.json\"",
+        )
 
         testInstrumentationRunner = "io.github.valentinaschiavon99.megyejatek.HiltTestRunner"
     }
@@ -87,6 +97,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     androidResources {

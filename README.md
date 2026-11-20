@@ -19,7 +19,8 @@ Written from scratch in Kotlin with Jetpack Compose. Map and city data come from
 - Real borders from OpenStreetMap and all 139 places above 10,000 inhabitants (KSH, 1 January 2026).
 - **Vaktérkép**: hide names and county borders.
 - Accounts with a username and a strong password; personal records on the phone and a global leaderboard (Firebase). The game itself works offline.
-- Coming next: the "Tanulj, mielőtt játszol" learning section.
+- **Tanulj, mielőtt játszol**: every county with its seat, neighbours and towns; a neighbour map and table; the 139 towns by population; why it is *megye* again since October 2026; FAQ and sources.
+- **Beállítások**: Vaktérkép, account (log out, delete the account and its scores), and an update check that offers the newest build from GitHub.
 
 ## Install the latest build
 

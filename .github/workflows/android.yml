@@ -59,7 +59,10 @@ jobs:
           fi
 
       - name: Build APK, compile UI tests, run unit tests
-        run: ./gradlew assembleDebug assembleDebugAndroidTest testDebugUnitTest --stacktrace
+        # The run number becomes the versionCode, so the in-app update check can compare builds.
+        run: >
+          ./gradlew assembleDebug assembleDebugAndroidTest testDebugUnitTest --stacktrace
+          -PversionCode=${{ github.run_number }} -PgitSha=${{ github.sha }}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -126,11 +129,24 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
           mv app-debug.apk megyejatek-debug.apk
           sha256sum megyejatek-debug.apk > megyejatek-debug.apk.sha256
+          # Read by the app's update check (Beállítások → Frissítés keresése).
+          python3 - <<'PY'
+          import json, os
+          run = int(os.environ["RUN_NUMBER"])
+          json.dump({
+              "versionCode": run,
+              "versionName": f"0.{run}",
+              "sha": os.environ["SHA"][:7],
+              "apkUrl": f"https://github.com/{os.environ['GH_REPO']}/releases/download/latest/megyejatek-debug.apk",
+              "sha256": open("megyejatek-debug.apk.sha256").read().split()[0],
+          }, open("version.json", "w"))
+          PY
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest megyejatek-debug.apk megyejatek-debug.apk.sha256 \
+          gh release create latest megyejatek-debug.apk megyejatek-debug.apk.sha256 version.json \
             --prerelease \
             --target "$SHA" \
             --title "Ultima build (debug)" \

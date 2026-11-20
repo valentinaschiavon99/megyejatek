@@ -5,6 +5,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
@@ -106,6 +107,41 @@ class AuthRepository @Inject constructor(@ApplicationContext context: Context) {
     fun logout() {
         auth?.signOut()
     }
+
+    /**
+     * Deletes the account and everything stored online for it: its scores, its profile and the
+     * Firebase user. Firebase requires a recent sign-in for this, so the password is asked again.
+     * Returns the deleted uid, so local data can be removed too.
+     */
+    suspend fun deleteAccount(password: String): Result<String> {
+        val a = auth ?: return Result.failure(IllegalStateException("unavailable"))
+        val user = a.currentUser ?: return Result.failure(IllegalStateException("signed out"))
+        return try {
+            val email = user.email ?: throw IllegalStateException("no email")
+            user.reauthenticate(EmailAuthProvider.getCredential(email, password)).await()
+            val db = FirebaseFirestore.getInstance()
+            // Scores first, then the profile, then the login itself (the rules let owners delete their own).
+            while (true) {
+                val page = db.collection("scores").whereEqualTo("uid", user.uid).limit(400).get().await()
+                if (page.isEmpty) break
+                val batch = db.batch()
+                page.documents.forEach { batch.delete(it.reference) }
+                batch.commit().await()
+            }
+            db.collection(USERS).document(user.uid).delete().await()
+            val uid = user.uid
+            user.delete().await()
+            Result.success(uid)
+        } catch (e: FirebaseAuthInvalidCredentialsException) {
+            Result.failure(WrongPasswordException())
+        } catch (e: FirebaseException) {
+            Result.failure(e)
+        } catch (e: IllegalStateException) {
+            Result.failure(e)
+        }
+    }
+
+    class WrongPasswordException : Exception("wrong password")
 
     private inline fun runCatchingAuth(block: () -> Player): AuthResult = try {
         AuthResult.Success(block())

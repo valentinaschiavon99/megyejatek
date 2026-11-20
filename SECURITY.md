@@ -25,6 +25,8 @@ Without `google-services.json` the app is built offline-only, with no accounts a
 | Debug builds | Signed with the **public** debug key in `app/debug.keystore`, only so CI builds install over each other. Never trust an APK only because of this signature. |
 | Secrets | `google-services.json` is git-ignored and injected in CI from the `GOOGLE_SERVICES_JSON_B64` secret. |
 | Crash reports | Firebase Crashlytics, without user ids or usernames. |
+| Account deletion | "Fiók törlése" re-checks the password, then deletes the player's scores, profile and login; the rules let players delete only their own documents. |
+| Updates | The app reads `version.json` from this repository's "latest" release over HTTPS and only opens a download link that points to this repository's releases. Installing is left to Android's own installer. |
 
 ## Supply chain and health checks
 

@@ -154,4 +154,32 @@
     <string name="sources_ne">Folyók és tavak: Natural Earth (közkincs).</string>
     <string name="sources_code">A játék forráskódja nyílt (MIT licenc): github.com/valentinaschiavon99/megyejatek</string>
     <string name="sources_note">A játék szövegei, grafikái és adatai saját munkák vagy a fenti nyílt forrásokból származnak.</string>
+
+    <!-- Beállítások -->
+    <string name="settings_app">Alkalmazás</string>
+    <string name="settings_version">Verzió: %1$s (%2$s)</string>
+    <string name="settings_checking">Frissítés keresése…</string>
+    <string name="settings_up_to_date">A legfrissebb verziót használod.</string>
+    <string name="settings_update_failed">Nem sikerült ellenőrizni a frissítést (nincs internet?).</string>
+    <string name="settings_update_available">Új verzió érhető el: %1$s</string>
+    <string name="settings_download">Letöltés</string>
+    <string name="settings_update_hint">A böngésző letölti az APK-t; nyisd meg, és telepítsd a régi fölé. Az eredményeid megmaradnak.</string>
+    <string name="settings_check_update">Frissítés keresése</string>
+    <string name="settings_display">Megjelenítés</string>
+    <string name="settings_blind_desc">Elrejti a megyék nevét és határait; csak az országhatár, a folyók és a tavak látszanak.</string>
+    <string name="settings_account">Fiók</string>
+    <string name="settings_not_signed_in">Nem vagy bejelentkezve.</string>
+    <string name="settings_delete">Fiók törlése</string>
+    <string name="settings_delete_title">Biztosan törlöd a fiókodat?</string>
+    <string name="settings_delete_text">A fiókod és a ranglistán szereplő összes eredményed véglegesen törlődik. Ezt nem lehet visszavonni. A megerősítéshez add meg a jelszavad.</string>
+    <string name="settings_delete_confirm">Végleges törlés</string>
+    <string name="settings_delete_failed">A törlés nem sikerült. Ellenőrizd az internetkapcsolatot, és próbáld újra.</string>
+    <string name="settings_deleted_title">Fiók törölve</string>
+    <string name="settings_deleted_text">A fiókodat és az eredményeidet töröltük.</string>
+    <string name="settings_privacy">Adatvédelem</string>
+    <string name="settings_privacy_desc">Csak a felhasználóneved, az eredményeid és névtelen hibajelentések kerülnek tárolásra. Nincs e-mail, helymeghatározás vagy reklám.</string>
+    <string name="settings_privacy_open">Adatvédelmi tájékoztató</string>
+    <string name="update_dialog_title">Új verzió érhető el</string>
+    <string name="update_dialog_text">Elérhető a Megyejáték %1$s verziója. Letöltöd most?</string>
+    <string name="update_later">Később</string>
 </resources>
