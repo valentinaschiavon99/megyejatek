@@ -117,6 +117,8 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: write # only to push the README screenshots to the "screenshots" branch
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -164,6 +166,31 @@ jobs:
           name: screenshots
           path: screenshots/
           if-no-files-found: warn
+
+      - name: Show failed tests
+        if: failure()
+        run: |
+          python3 - <<'EOF'
+          import glob, xml.etree.ElementTree as ET
+          for f in glob.glob("app/build/outputs/androidTest-results/connected/**/*.xml", recursive=True):
+              for case in ET.parse(f).getroot().iter("testcase"):
+                  for bad in list(case.findall("failure")) + list(case.findall("error")):
+                      print(f"::error title={case.get('classname')}.{case.get('name')}::{(bad.get('message') or '')[:300]}")
+                      print((bad.text or "")[:2500])
+          EOF
+
+      - name: Publish screenshots to the "screenshots" branch
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd screenshots
+          if ! ls *.png >/dev/null 2>&1; then echo "No screenshots"; exit 0; fi
+          git init -q -b screenshots
+          git add *.png
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "chore: screenshots from ${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" screenshots
 
   publish:
     # Only pushes to main update the downloadable APK; PRs and scheduled runs never publish.
