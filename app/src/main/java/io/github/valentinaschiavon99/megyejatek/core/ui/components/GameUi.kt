@@ -2,6 +2,7 @@ package io.github.valentinaschiavon99.megyejatek.core.ui.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
@@ -30,6 +31,8 @@ import androidx.compose.material.icons.outlined.LinearScale
 import androidx.compose.material.icons.outlined.LocationCity
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.PinDrop
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -235,5 +239,38 @@ fun SlidingText(text: String, style: TextStyle, modifier: Modifier = Modifier, m
         modifier = modifier.semantics(mergeDescendants = true) {},
     ) { t ->
         Text(t, style = style, maxLines = maxLines, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** Hearts for the lives left in the round; the one just lost shakes and fades. */
+@Composable
+fun Lives(left: Int, max: Int, label: String, modifier: Modifier = Modifier) {
+    val red = LocalMapColors.current.wrong
+    Row(
+        modifier.semantics(mergeDescendants = true) { contentDescription = label },
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        for (i in 0 until max) {
+            val alive = i < left
+            val shake = remember { Animatable(0f) }
+            LaunchedEffect(alive) {
+                if (!alive) {
+                    for (x in listOf(1f, -1f, 0.6f, -0.6f, 0f)) shake.animateTo(x, tween(55))
+                }
+            }
+            val scale by animateFloatAsState(if (alive) 1f else 0.85f, label = "heart")
+            Icon(
+                if (alive) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                contentDescription = null,
+                tint = if (alive) red else MaterialTheme.colorScheme.outlineVariant,
+                modifier = Modifier
+                    .size(20.dp)
+                    .graphicsLayer {
+                        translationX = shake.value * 4.dp.toPx()
+                        scaleX = scale
+                        scaleY = scale
+                    },
+            )
+        }
     }
 }

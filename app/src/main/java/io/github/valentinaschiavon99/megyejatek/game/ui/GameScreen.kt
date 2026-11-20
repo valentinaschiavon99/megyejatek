@@ -3,6 +3,7 @@ package io.github.valentinaschiavon99.megyejatek.game.ui
 import android.content.res.Configuration
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Lightbulb
@@ -47,6 +49,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -63,6 +66,7 @@ import io.github.valentinaschiavon99.megyejatek.core.security.InputSanitizer
 import io.github.valentinaschiavon99.megyejatek.core.ui.components.AnimatedNumber
 import io.github.valentinaschiavon99.megyejatek.core.ui.components.Confetti
 import io.github.valentinaschiavon99.megyejatek.core.ui.components.IconBadge
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.Lives
 import io.github.valentinaschiavon99.megyejatek.core.ui.components.MultiplierBadge
 import io.github.valentinaschiavon99.megyejatek.core.ui.components.PointsPopup
 import io.github.valentinaschiavon99.megyejatek.core.ui.components.SlidingText
@@ -172,7 +176,7 @@ fun GameContent(
                 modePicker()
                 GameHeader(state, blindMap, onBlindMapChange)
                 if (playing) {
-                    PromptCard(data, state.mode, round!!, state.lastGuess, onHint, onGiveUp, compact = true)
+                    PromptCard(data, state, round!!, onHint, onGiveUp, compact = true)
                 } else if (state.phase == Phase.Idle) {
                     StartCard(state.mode, state.best, onNewGame, Modifier.padding(horizontal = 12.dp), compact = true)
                 }
@@ -183,7 +187,7 @@ fun GameContent(
         Column(Modifier.fillMaxSize()) {
             modePicker()
             GameHeader(state, blindMap, onBlindMapChange)
-            if (playing) PromptCard(data, state.mode, round!!, state.lastGuess, onHint, onGiveUp, compact = false)
+            if (playing) PromptCard(data, state, round!!, onHint, onGiveUp, compact = false)
             map(Modifier.weight(1f))
         }
     }
@@ -271,14 +275,15 @@ private fun promptTexts(data: MapData, round: RoundState, q: Question): Pair<Str
 @Composable
 private fun PromptCard(
     data: MapData,
-    mode: GameMode,
+    state: GameUiState,
     round: RoundState,
-    lastGuess: LastGuess?,
     onHint: () -> Unit,
     onGiveUp: () -> Unit,
     compact: Boolean,
 ) {
     val q = round.current ?: return
+    val mode = state.mode
+    val lastGuess = state.lastGuess
     val (small, big) = promptTexts(data, round, q)
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
@@ -292,6 +297,12 @@ private fun PromptCard(
                     Text(small, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     SlidingText(big, MaterialTheme.typography.titleLarge, Modifier.testTag("prompt"))
                 }
+                Lives(
+                    left = state.livesLeft,
+                    max = state.maxLives,
+                    label = stringResource(R.string.game_lives, state.livesLeft),
+                    modifier = Modifier.align(Alignment.Top).testTag("lives"),
+                )
             }
             if (lastGuess != null) {
                 Text(
@@ -307,10 +318,19 @@ private fun PromptCard(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                FilledTonalButton(onClick = onHint) {
+                FilledTonalButton(onClick = onHint, enabled = state.hintsLeft > 0, modifier = Modifier.testTag("hint")) {
                     Icon(Icons.Outlined.Lightbulb, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.size(6.dp))
                     Text(stringResource(R.string.game_hint))
+                    Spacer(Modifier.size(6.dp))
+                    Text(
+                        state.hintsLeft.toString(),
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
+                            .padding(horizontal = 7.dp, vertical = 1.dp),
+                    )
                 }
                 TextButton(onClick = onGiveUp) {
                     Icon(Icons.Outlined.Flag, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -408,7 +428,13 @@ private fun ResultDialog(state: GameUiState, round: RoundState, onNewGame: () ->
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Text(
-                        stringResource(if (round.gaveUp) R.string.result_title_gave_up else R.string.result_title_done),
+                        stringResource(
+                            when {
+                                round.gaveUp -> R.string.result_title_gave_up
+                                round.outOfLives -> R.string.result_title_out_of_lives
+                                else -> R.string.result_title_done
+                            },
+                        ),
                         style = MaterialTheme.typography.headlineSmall,
                     )
                     StarRating(state.stars)
@@ -431,6 +457,7 @@ private fun ResultDialog(state: GameUiState, round: RoundState, onNewGame: () ->
                     ResultRow(stringResource(R.string.result_label_time), formatTime(state.elapsedMs))
                     ResultRow(stringResource(R.string.result_label_correct), "${round.hits} / ${round.hitsAvailable}")
                     if (round.timeBonus > 0) ResultRow(stringResource(R.string.result_label_bonus), "+${round.timeBonus}")
+                    ResultRow(stringResource(R.string.result_label_lives), "${state.livesLeft} / ${state.maxLives}")
                     if (round.hintsUsed > 0) ResultRow(stringResource(R.string.result_label_hints), round.hintsUsed.toString())
                     Spacer(Modifier.height(4.dp))
                     Button(onClick = onNewGame, modifier = Modifier.fillMaxWidth().height(50.dp)) {

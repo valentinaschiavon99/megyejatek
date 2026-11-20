@@ -13,8 +13,10 @@ data class ScoringConfig(
     val maxMultiplier: Int = 5,
     /** Subtracted for each Súgás (the score never goes below zero). */
     val hintCost: Int = 50,
-    /** Wrong taps allowed on one question; after that the answer is shown and the game moves on. */
-    val attemptsPerQuestion: Int = 3,
+    /** Lives for the whole round: every wrong tap or far-off Városok guess costs one; at zero the round ends. */
+    val livesPerRound: Int = 3,
+    /** Súgás can be used this many times per round. */
+    val hintsPerRound: Int = 1,
     /** Time bonus: every second under [parSecondsPerAnswer] × answers is worth this much. */
     val timeBonusPerSecond: Int = 5,
     val parSecondsPerAnswer: Int = 6,

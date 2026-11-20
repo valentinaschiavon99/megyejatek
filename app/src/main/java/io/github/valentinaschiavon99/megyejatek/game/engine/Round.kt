@@ -40,9 +40,9 @@ enum class Outcome { Correct, Revealed, GivenUp }
 /** What a single tap did, so the UI can flash, vibrate and move on. */
 sealed interface TapResult {
     data class Correct(val answerId: String, val points: Int, val questionDone: Boolean) : TapResult
-    data class Wrong(val tappedId: String, val attemptsLeft: Int) : TapResult
-    /** Out of attempts: the missing answers are shown and the game moves on. */
-    data class Revealed(val tappedId: String, val missing: Set<String>) : TapResult
+    data class Wrong(val tappedId: String, val livesLeft: Int) : TapResult
+    /** The last life is gone: the round ends and the answers of the current question are shown. */
+    data class OutOfLives(val tappedId: String, val missing: Set<String>) : TapResult
     /** Városok: one guess per city, scored by distance. */
     data class Guess(val km: Double, val points: Int, val good: Boolean) : TapResult
     /** Tap on something already answered, on the question's own county, or the round is over. */
@@ -58,17 +58,22 @@ data class RoundState(
     val index: Int = 0,
     val score: Int = 0,
     val streak: Int = 0,
-    val wrongOnCurrent: Int = 0,
     /** Answers already found in the current question (Szomszédok). */
     val foundInCurrent: Set<String> = emptySet(),
     val outcomes: Map<String, Outcome> = emptyMap(),
     val hits: Int = 0,
     val hintsUsed: Int = 0,
+    /** Wrong taps and far-off guesses in the whole round; each one costs a life. */
     val mistakes: Int = 0,
     val timeBonus: Int = 0,
     val finished: Boolean = false,
     val gaveUp: Boolean = false,
+    /** Ended because every life was used up. */
+    val outOfLives: Boolean = false,
 ) {
+    fun livesLeft(config: ScoringConfig): Int = (config.livesPerRound - mistakes).coerceAtLeast(0)
+    fun hintsLeft(config: ScoringConfig): Int = (config.hintsPerRound - hintsUsed).coerceAtLeast(0)
+
     val current: Question? get() = questions.getOrNull(index)?.takeUnless { finished }
     val total: Int get() = questions.size
     val correctCount: Int get() = outcomes.values.count { it == Outcome.Correct }
@@ -108,14 +113,12 @@ object RoundRules {
             return next to TapResult.Correct(tappedId, points, done)
         }
 
-        val wrong = state.wrongOnCurrent + 1
-        val base = state.copy(streak = 0, mistakes = state.mistakes + 1)
-        return if (wrong >= config.attemptsPerQuestion) {
+        val next = state.copy(streak = 0, mistakes = state.mistakes + 1)
+        return if (next.livesLeft(config) == 0) {
             val missing = if (q.needAll) q.answers - state.foundInCurrent else q.hintIds
-            base.copy(outcomes = state.outcomes + (q.id to Outcome.Revealed)).advance() to
-                TapResult.Revealed(tappedId, missing)
+            next.endOutOfLives() to TapResult.OutOfLives(tappedId, missing)
         } else {
-            base.copy(wrongOnCurrent = wrong) to TapResult.Wrong(tappedId, config.attemptsPerQuestion - wrong)
+            next to TapResult.Wrong(tappedId, next.livesLeft(config))
         }
     }
 
@@ -125,19 +128,21 @@ object RoundRules {
         if (q.kind != PromptKind.FindCity) return state to TapResult.Ignored
         val good = km <= config.placeGoodKm
         val points = config.placePoints(km) * config.multiplierFor(state.streak)
-        val next = state.copy(
+        var next = state.copy(
             score = state.score + points,
             streak = if (good) state.streak + 1 else 0,
             hits = state.hits + if (points > 0) 1 else 0,
             mistakes = state.mistakes + if (good) 0 else 1,
             outcomes = state.outcomes + (q.id to if (good) Outcome.Correct else Outcome.Revealed),
-        ).advance()
+        )
+        next = if (next.livesLeft(config) == 0) next.endOutOfLives() else next.advance()
         return next to TapResult.Guess(km, points, good)
     }
 
-    /** Súgás: resets the multiplier and costs points. Returns the ids to flash. */
+    /** Súgás: resets the multiplier and costs points; once per round. Returns the ids to flash. */
     fun hint(state: RoundState, config: ScoringConfig): Pair<RoundState, Set<String>> {
         val q = state.current ?: return state to emptySet()
+        if (state.hintsLeft(config) == 0) return state to emptySet()
         val ids = if (q.needAll) q.answers - state.foundInCurrent else q.hintIds
         return state.copy(
             streak = 0,
@@ -155,16 +160,23 @@ object RoundRules {
 
     /** Adds the time bonus once the last question is answered. */
     fun complete(state: RoundState, elapsedMs: Long, config: ScoringConfig): RoundState {
-        if (!state.finished || state.gaveUp || state.timeBonus > 0) return state
+        if (!state.finished || state.gaveUp || state.outOfLives || state.timeBonus > 0) return state
         val bonus = config.timeBonus(state.hitsAvailable, elapsedMs)
         return state.copy(timeBonus = bonus, score = state.score + bonus)
+    }
+
+    /** No lives left: the current question counts as missed, the rest as not reached. */
+    private fun RoundState.endOutOfLives(): RoundState {
+        val q = questions[index]
+        val current = if (q.id in outcomes) emptyMap() else mapOf(q.id to Outcome.Revealed)
+        val rest = questions.filter { it.id !in outcomes && it.id != q.id }.associate { it.id to Outcome.GivenUp }
+        return copy(outcomes = outcomes + current + rest, foundInCurrent = emptySet(), finished = true, outOfLives = true)
     }
 
     private fun RoundState.advance(): RoundState {
         val nextIndex = index + 1
         return copy(
             index = nextIndex,
-            wrongOnCurrent = 0,
             foundInCurrent = emptySet(),
             finished = nextIndex >= questions.size,
         )

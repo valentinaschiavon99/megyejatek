@@ -67,12 +67,17 @@ data class GameUiState(
     /** Best completed score in this mode on this phone, for the start card and "Új rekord!". */
     val best: Int? = null,
     val newRecord: Boolean = false,
+    val maxLives: Int = ScoringConfig.Default.livesPerRound,
+    val maxHints: Int = ScoringConfig.Default.hintsPerRound,
 ) {
+    val livesLeft: Int get() = (maxLives - (round?.mistakes ?: 0)).coerceAtLeast(0)
+    val hintsLeft: Int get() = (maxHints - (round?.hintsUsed ?: 0)).coerceAtLeast(0)
+
     /** 0–3 stars for the result screen, by the share of correct answers. */
     val stars: Int
         get() {
             val r = round ?: return 0
-            if (r.gaveUp || r.hitsAvailable == 0) return 0
+            if (r.gaveUp || r.outOfLives || r.hitsAvailable == 0) return 0
             val ratio = r.hits.toDouble() / r.hitsAvailable
             return when {
                 ratio >= 0.95 && r.hintsUsed == 0 -> 3
@@ -212,7 +217,7 @@ class GameViewModel @Inject constructor(
                 _events.tryEmit(GameEvent.Wrong)
                 flash(result.tappedId, CountyVisual.Wrong, 600)
             }
-            is TapResult.Revealed -> {
+            is TapResult.OutOfLives -> {
                 _events.tryEmit(GameEvent.Wrong)
                 flash(result.tappedId, CountyVisual.Wrong, 600)
                 // Neighbour answers are not kept on the map after the question, so show them briefly.
@@ -248,7 +253,7 @@ class GameViewModel @Inject constructor(
 
     fun onHint() {
         val round = _state.value.round ?: return
-        if (_state.value.phase != Phase.Playing) return
+        if (_state.value.phase != Phase.Playing || round.hintsLeft(config) == 0) return
         val (next, ids) = RoundRules.hint(round, config)
         if (ids.isNotEmpty()) {
             _events.tryEmit(GameEvent.Hint)

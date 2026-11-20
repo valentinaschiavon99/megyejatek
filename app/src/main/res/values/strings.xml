@@ -33,7 +33,7 @@
     <string name="game_help_szomszedok">Kiemelünk egy megyét, te koppints az összes szomszédjára.</string>
     <string name="game_help_varosok">Kiírunk egy várost, te koppints oda, ahol szerinted van. Minél közelebb, annál több pont.</string>
     <string name="game_help_felsorolas">Sorold fel az összes megyét és Budapestet nyugatról keletre: mindig a következőre koppints.</string>
-    <string name="game_help_common">Egymás utáni jó válaszokért nő a szorzó; hiba vagy súgás után újra ×1.</string>
+    <string name="game_help_common">3 életed van: minden hiba egyet visz. Játékonként egyszer kérhetsz súgást. Egymás utáni jó válaszokért nő a szorzó; hiba vagy súgás után újra ×1.</string>
     <string name="game_progress">%1$d/%2$d</string>
     <string name="game_multiplier">×%1$d</string>
     <string name="game_score">%1$d pont</string>
@@ -137,7 +137,7 @@
     <string name="megye_p5">A játékban ezért a mai hivatalos „megye” szót használjuk. A névváltozások a határokat, a székhelyeket és a számukat nem érintették: ma is 19 megye és a főváros, Budapest alkotja az országot.</string>
 
     <string name="faq_q1">Hogyan számolódik a pontszám?</string>
-    <string name="faq_a1">Minden jó válasz 100 pontot ér, szorozva a szorzóval. Három egymás utáni jó válasz után a szorzó eggyel nő (legfeljebb ×5); hiba vagy súgás után visszaesik ×1-re. A súgás 50 pontba kerül. Ha nem adod fel, a végén időbónuszt kapsz. A Városok módban a távolság számít: 5 km-en belül teljes pont, 75 km-től nulla.</string>
+    <string name="faq_a1">Minden jó válasz 100 pontot ér, szorozva a szorzóval. Három egymás utáni jó válasz után a szorzó eggyel nő (legfeljebb ×5); hiba vagy súgás után visszaesik ×1-re. A súgás 50 pontba kerül, és játékonként csak egyszer kérhető. 3 életed van: minden rossz koppintás (a Városok módban a 15 km-nél messzebbi tipp) egy életbe kerül, és ha elfogy, vége a játéknak. Ha végigérsz (nem adod fel, és marad életed), a végén időbónuszt kapsz. A Városok módban a távolság számít: 5 km-en belül teljes pont, 75 km-től nulla.</string>
     <string name="faq_q2">Kell internet a játékhoz?</string>
     <string name="faq_a2">Nem. Internet csak a regisztrációhoz, a belépéshez és a globális ranglistához kell. Az internet nélkül lejátszott eredmények később automatikusan felkerülnek.</string>
     <string name="faq_q3">Elfelejtettem a jelszavam. Mit tegyek?</string>
@@ -190,4 +190,7 @@
     <string name="result_label_correct">Jó válaszok</string>
     <string name="result_label_bonus">Időbónusz</string>
     <string name="result_label_hints">Súgások</string>
+    <string name="game_lives">Életek: %1$d</string>
+    <string name="result_title_out_of_lives">Elfogyott az életed!</string>
+    <string name="result_label_lives">Megmaradt élet</string>
 </resources>

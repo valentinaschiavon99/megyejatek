@@ -8,7 +8,7 @@ import org.junit.Test
 class RoundRulesTest {
     private val config = ScoringConfig(
         basePoints = 100, streakPerStep = 2, maxMultiplier = 3, hintCost = 50,
-        attemptsPerQuestion = 3, timeBonusPerSecond = 10, parSecondsPerAnswer = 5,
+        livesPerRound = 3, hintsPerRound = 1, timeBonusPerSecond = 10, parSecondsPerAnswer = 5,
         placeFullKm = 5.0, placeZeroKm = 55.0, placeGoodKm = 15.0,
     )
 
@@ -45,20 +45,29 @@ class RoundRulesTest {
         val s = megyek().tap("A").first.tap("B").first // streak 2 -> x2
         assertEquals(2, RoundRules.multiplier(s, config))
         val (afterWrong, r) = s.tap("F")
-        assertEquals(2, (r as TapResult.Wrong).attemptsLeft)
+        assertEquals(2, (r as TapResult.Wrong).livesLeft)
         assertEquals(1, RoundRules.multiplier(afterWrong, config))
         assertEquals("C", afterWrong.current?.subject)
         assertEquals(100, (afterWrong.tap("C").second as TapResult.Correct).points)
     }
 
-    @Test fun outOfAttemptsRevealsAndMovesOn() {
-        val s = megyek().tap("B").first.tap("C").first
+    @Test fun livesAreSharedByTheWholeRound() {
+        // One mistake on A, one on B: two lives gone, the round goes on.
+        var s = megyek().tap("F").first.tap("A").first.tap("E").first
+        assertEquals(1, s.livesLeft(config))
+        assertFalse(s.finished)
+        assertEquals("B", s.current?.subject)
+        // The third mistake ends the round, wherever it happens.
         val (next, r) = s.tap("D")
-        assertEquals(setOf("A"), (r as TapResult.Revealed).missing)
-        assertEquals(Outcome.Revealed, next.outcomes["A"])
-        assertEquals("B", next.current?.subject)
-        assertEquals(0, next.score)
-        assertEquals(3, next.mistakes)
+        assertEquals(setOf("B"), (r as TapResult.OutOfLives).missing)
+        assertTrue(next.finished && next.outOfLives && !next.gaveUp)
+        assertEquals(0, next.livesLeft(config))
+        assertEquals(Outcome.Correct, next.outcomes["A"])
+        assertEquals(Outcome.Revealed, next.outcomes["B"])
+        assertEquals(4, next.outcomes.values.count { it == Outcome.GivenUp })
+        assertEquals(null, next.current)
+        assertEquals(next, RoundRules.complete(next, 1_000, config)) // no time bonus
+        assertEquals(next to TapResult.Ignored, next.tap("B"))
     }
 
     @Test fun tappingAnAlreadyFoundCountyIsIgnored() {
@@ -76,6 +85,16 @@ class RoundRulesTest {
         assertEquals(0, afterHint.streak)
         assertEquals(1, afterHint.hintsUsed)
         assertEquals(0, RoundRules.hint(megyek(), config).first.score)
+    }
+
+    @Test fun onlyOneHintPerRound() {
+        val (once, flash) = RoundRules.hint(megyek(), config)
+        assertEquals(setOf("A"), flash)
+        assertEquals(0, once.hintsLeft(config))
+        val (twice, none) = RoundRules.hint(once.tap("A").first, config)
+        assertEquals(emptySet<String>(), none)
+        assertEquals(1, twice.hintsUsed)
+        assertEquals(100, twice.score) // no second charge
     }
 
     @Test fun giveUpEndsRoundWithoutTimeBonus() {
@@ -140,7 +159,7 @@ class RoundRulesTest {
     @Test fun neighbourRevealShowsOnlyTheMissingOnes() {
         var s = neighbours().tap("A").first
         s = s.tap("X").first.tap("Y").first
-        val r = s.tap("Z").second as TapResult.Revealed
+        val r = s.tap("Z").second as TapResult.OutOfLives
         assertEquals(setOf("B", "C"), r.missing)
         val (_, hint) = RoundRules.hint(neighbours().tap("A").first, config)
         assertEquals(setOf("B", "C"), hint)
@@ -169,9 +188,21 @@ class RoundRulesTest {
         val (s3, r3) = RoundRules.guess(s, 200.0, config)
         assertEquals(0, (r3 as TapResult.Guess).points)
         assertTrue(s3.finished)
+        assertEquals(1, s3.livesLeft(config))
         assertEquals(2, s3.hits) // two guesses earned points
         assertEquals(TapResult.Ignored, RoundRules.tap(cities(), "x", config).second) // county taps don't count
         assertEquals(setOf("county-x"), RoundRules.hint(cities(), config).second)
+    }
+
+    @Test fun farGuessesCostLives() {
+        val many = RoundState((1..6).map { Question("c$it", PromptKind.FindCity, "c$it", setOf("c$it")) })
+        var s = many
+        repeat(2) { s = RoundRules.guess(s, 90.0, config).first }
+        assertFalse(s.finished)
+        s = RoundRules.guess(s, 90.0, config).first
+        assertTrue(s.finished && s.outOfLives)
+        assertEquals(Outcome.Revealed, s.outcomes["c3"])
+        assertEquals(3, s.outcomes.values.count { it == Outcome.GivenUp })
     }
 
     // ---- Felsorolás ----------------------------------------------------------------------

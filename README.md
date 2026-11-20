@@ -28,7 +28,7 @@ Written from scratch in Kotlin with Jetpack Compose. Map and city data come from
 
 ## Features
 
-- Five scored modes, all with a timer, a multiplier for streaks, Súgás (hint), Feladom (give up) and a time bonus:
+- Five scored modes, all with a timer, a multiplier for streaks, 3 lives per game, one Súgás (hint) per game, Feladom (give up) and a time bonus:
   - **Megyék**: a county is named, tap it on the map.
   - **Székhelyek**: a county seat is named, tap its county (Pest's seat is Budapest!).
   - **Szomszédok**: a county is highlighted, tap all of its neighbours.
