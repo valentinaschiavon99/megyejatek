@@ -1,6 +1,7 @@
 package io.github.valentinaschiavon99.megyejatek
 
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,7 +13,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +37,8 @@ import io.github.valentinaschiavon99.megyejatek.navigation.AppNavHost
 import javax.inject.Inject
 
 private enum class TopScreen { Intro, Auth, App }
+
+private const val UPDATE_CHECK_INTERVAL_MS = 5 * 60 * 1000L
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -60,11 +68,26 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Once per launch: offer a newer build from GitHub, if there is one.
-                var available by remember { mutableStateOf<ReleaseInfo?>(null) }
+                // Every time the app comes to the foreground: offer a newer build from GitHub, if any.
+                // Checks run at most every few minutes; "Később" hides it until the next check.
+                var available by remember {
+                    mutableStateOf((updates.lastStatus as? UpdateStatus.Available)?.release)
+                }
+                // Saveable, so rotating the phone neither re-checks nor brings back a dismissed dialog.
                 var dismissed by rememberSaveable { mutableStateOf(false) }
-                LaunchedEffect(Unit) {
-                    (updates.check() as? UpdateStatus.Available)?.let { available = it.release }
+                var lastCheck by rememberSaveable { mutableLongStateOf(0L) }
+                val scope = rememberCoroutineScope()
+                LifecycleEventEffect(Lifecycle.Event.ON_START) {
+                    val now = SystemClock.elapsedRealtime()
+                    if (lastCheck == 0L || now - lastCheck > UPDATE_CHECK_INTERVAL_MS) {
+                        lastCheck = now
+                        scope.launch {
+                            (updates.check() as? UpdateStatus.Available)?.let {
+                                available = it.release
+                                dismissed = false
+                            }
+                        }
+                    }
                 }
                 val release = available
                 if (release != null && !dismissed && !showIntro) {

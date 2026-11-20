@@ -42,8 +42,12 @@ class UpdateChecker @Inject constructor() {
     val currentVersionName: String get() = BuildConfig.VERSION_NAME
     val currentSha: String get() = BuildConfig.GIT_SHA
 
+    /** Result of the most recent [check] in this process, e.g. to show it again after rotation. */
+    @Volatile var lastStatus: UpdateStatus? = null
+        private set
+
     suspend fun check(): UpdateStatus = withContext(Dispatchers.IO) {
-        try {
+        val status = try {
             val release = parse(download(BuildConfig.UPDATE_INFO_URL))
             if (release.versionCode > currentVersionCode) UpdateStatus.Available(release) else UpdateStatus.UpToDate
         } catch (e: IOException) {
@@ -51,6 +55,8 @@ class UpdateChecker @Inject constructor() {
         } catch (e: IllegalArgumentException) {
             UpdateStatus.Failed(e.message ?: "invalid")
         }
+        lastStatus = status
+        status
     }
 
     internal fun parse(body: String): ReleaseInfo {
