@@ -20,7 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.ChevronRight
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -122,7 +122,7 @@ private fun Entry(@StringRes title: Int, subtitle: String, onClick: () -> Unit) 
     ListItem(
         headlineContent = { Text(stringResource(title), style = MaterialTheme.typography.titleMedium) },
         supportingContent = { Text(subtitle) },
-        trailingContent = { Icon(Icons.AutoMirrored.Outlined.ChevronRight, contentDescription = null) },
+        trailingContent = { Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null) },
         modifier = Modifier.clickable(onClick = onClick),
     )
     HorizontalDivider()
@@ -149,7 +149,7 @@ fun CountyListScreen(onBack: () -> Unit, onCounty: (String) -> Unit, viewModel: 
                                     " · " + stringResource(R.string.county_summary, c.info.neighbours.size, c.info.cityIds.size),
                             )
                         },
-                        trailingContent = { Icon(Icons.AutoMirrored.Outlined.ChevronRight, contentDescription = null) },
+                        trailingContent = { Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null) },
                         modifier = Modifier.clickable { onCounty(c.id) },
                     )
                     HorizontalDivider()
