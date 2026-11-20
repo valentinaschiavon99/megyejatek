@@ -1,16 +1,21 @@
 package io.github.valentinaschiavon99.megyejatek.game.ui
 
+import android.content.res.Configuration
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Lightbulb
@@ -36,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -116,7 +122,8 @@ fun GameContent(
     val round = state.round
     val cityMode = round?.current?.kind == PromptKind.FindCity || state.mode == GameMode.Varosok
 
-    Column(Modifier.fillMaxSize()) {
+    val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val panel: @Composable () -> Unit = {
         GameHeader(
             elapsedMs = state.elapsedMs,
             multiplier = state.multiplier,
@@ -127,7 +134,9 @@ fun GameContent(
         if (state.phase == Phase.Playing && round != null) {
             PromptBar(data, round, state.lastGuess, onHint, onGiveUp)
         }
-        Box(Modifier.weight(1f)) {
+    }
+    val map: @Composable (Modifier) -> Unit = { m ->
+        Box(m) {
             HungaryMap(
                 data = data,
                 countyStates = state.countyStates,
@@ -140,6 +149,19 @@ fun GameContent(
             if (state.phase == Phase.Idle) {
                 StartCard(state.mode, onNewGame, Modifier.align(Alignment.Center))
             }
+        }
+    }
+
+    if (landscape) {
+        // Phone on its side: controls on the left, the map gets the full height on the right.
+        Row(Modifier.fillMaxSize()) {
+            Column(Modifier.width(340.dp).fillMaxHeight().verticalScroll(rememberScrollState())) { panel() }
+            map(Modifier.weight(1f).fillMaxHeight())
+        }
+    } else {
+        Column(Modifier.fillMaxSize()) {
+            panel()
+            map(Modifier.weight(1f))
         }
     }
 
