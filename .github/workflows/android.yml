@@ -150,6 +150,21 @@ jobs:
           name: ui-test-reports
           path: app/build/reports/androidTests/
 
+      - name: Collect screenshots
+        if: always()
+        run: |
+          mkdir -p screenshots
+          find app/build/outputs/connected_android_test_additional_output -name '*.png' -exec cp {} screenshots/ \; || true
+          ls -l screenshots
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshots
+          path: screenshots/
+          if-no-files-found: warn
+
   publish:
     # Only pushes to main update the downloadable APK; PRs and scheduled runs never publish.
     needs: build

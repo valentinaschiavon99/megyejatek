@@ -55,6 +55,8 @@ android {
         )
 
         testInstrumentationRunner = "io.github.valentinaschiavon99.megyejatek.HiltTestRunner"
+        // ScreenshotTest writes PNGs through Test Storage; AGP copies them off the device after the run.
+        testInstrumentationRunnerArguments["useTestStorageService"] = "true"
     }
 
     signingConfigs {
@@ -178,5 +180,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.androidx.test.storage)
+    androidTestUtil(libs.androidx.test.services)
     kspAndroidTest(libs.hilt.compiler)
 }
