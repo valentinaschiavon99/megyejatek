@@ -13,6 +13,8 @@ import kotlinx.serialization.Serializable
 @Serializable data object PlayRoute
 @Serializable data object ResultsRoute
 @Serializable data object SettingsRoute
+/** Sign in or register later, from Beállítások or the leaderboard. */
+@Serializable data object AuthRoute
 
 /** The Tanulj tab is a nested graph, so its sub-screens keep the tab selected. */
 @Serializable data object LearnGraph

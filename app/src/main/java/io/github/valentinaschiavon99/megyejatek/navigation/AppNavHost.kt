@@ -43,6 +43,11 @@ import io.github.valentinaschiavon99.megyejatek.learn.InfoScreen
 import io.github.valentinaschiavon99.megyejatek.learn.LearnHomeScreen
 import io.github.valentinaschiavon99.megyejatek.learn.NeighboursScreen
 import io.github.valentinaschiavon99.megyejatek.settings.SettingsScreen
+import io.github.valentinaschiavon99.megyejatek.auth.AuthScreen
+import io.github.valentinaschiavon99.megyejatek.auth.AuthViewModel
+import androidx.compose.runtime.LaunchedEffect
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import io.github.valentinaschiavon99.megyejatek.play.PlayScreen
@@ -134,8 +139,14 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
                         InfoScreen(page, onBack = { navController.popBackStack() })
                     }
                 }
-                composable<ResultsRoute> { ResultsScreen() }
-                composable<SettingsRoute> { SettingsScreen() }
+                composable<ResultsRoute> { ResultsScreen(onSignIn = { navController.navigate(AuthRoute) }) }
+                composable<SettingsRoute> { SettingsScreen(onSignIn = { navController.navigate(AuthRoute) }) }
+                composable<AuthRoute> {
+                    val vm: AuthViewModel = hiltViewModel()
+                    val player by vm.player.collectAsStateWithLifecycle()
+                    LaunchedEffect(player) { if (player != null) navController.popBackStack() }
+                    AuthScreen(onSkip = { navController.popBackStack() }, skipAsGuest = false, viewModel = vm)
+                }
             }
         }
     }

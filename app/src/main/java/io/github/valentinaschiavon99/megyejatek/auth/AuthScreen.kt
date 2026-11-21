@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,7 +59,12 @@ import io.github.valentinaschiavon99.megyejatek.core.security.CredentialPolicy.U
 import io.github.valentinaschiavon99.megyejatek.core.ui.theme.LocalMapColors
 
 @Composable
-fun AuthScreen(viewModel: AuthViewModel = hiltViewModel()) {
+fun AuthScreen(
+    /** First run: "Játék vendégként". Later, from Beállítások or the leaderboard: back to the app. */
+    onSkip: () -> Unit,
+    skipAsGuest: Boolean,
+    viewModel: AuthViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     AuthContent(
         state = state,
@@ -67,6 +73,8 @@ fun AuthScreen(viewModel: AuthViewModel = hiltViewModel()) {
         onPassword = viewModel::setPassword,
         onConfirm = viewModel::setConfirm,
         onSubmit = viewModel::submit,
+        onSkip = onSkip,
+        skipAsGuest = skipAsGuest,
     )
 }
 
@@ -78,6 +86,8 @@ fun AuthContent(
     onPassword: (String) -> Unit,
     onConfirm: (String) -> Unit,
     onSubmit: () -> Unit,
+    onSkip: () -> Unit = {},
+    skipAsGuest: Boolean = true,
 ) {
     val register = state.mode == AuthMode.Register
     Surface(Modifier.fillMaxSize()) {
@@ -169,6 +179,14 @@ fun AuthContent(
                     } else {
                         Text(stringResource(if (register) R.string.auth_register_action else R.string.auth_login_action))
                     }
+                }
+
+                OutlinedButton(
+                    onClick = onSkip,
+                    enabled = !state.busy,
+                    modifier = Modifier.fillMaxWidth().testTag("auth-skip"),
+                ) {
+                    Text(stringResource(if (skipAsGuest) R.string.auth_play_as_guest else R.string.auth_not_now))
                 }
 
                 Text(

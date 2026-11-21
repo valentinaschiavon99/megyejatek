@@ -41,7 +41,7 @@ import io.github.valentinaschiavon99.megyejatek.core.update.UpdateChecker
 import io.github.valentinaschiavon99.megyejatek.core.update.UpdateStatus
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(onSignIn: () -> Unit = {}, viewModel: SettingsViewModel = hiltViewModel()) {
     val player by viewModel.player.collectAsStateWithLifecycle()
     val blind by viewModel.blindMap.collectAsStateWithLifecycle()
     val update by viewModel.update.collectAsStateWithLifecycle()
@@ -103,7 +103,10 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             Section(stringResource(R.string.settings_account)) {
                 val p = player
                 if (p == null) {
-                    Text(stringResource(R.string.settings_not_signed_in))
+                    Text(stringResource(R.string.settings_guest))
+                    Button(onClick = onSignIn, modifier = Modifier.testTag("sign-in")) {
+                        Text(stringResource(R.string.auth_sign_in_cta))
+                    }
                 } else {
                     Text(stringResource(R.string.records_logged_in_as, p.username))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

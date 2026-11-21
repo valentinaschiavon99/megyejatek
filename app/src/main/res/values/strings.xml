@@ -52,7 +52,7 @@
     <string name="result_time_bonus">Időbónusz: +%1$d</string>
     <string name="result_hints">Súgások: %1$d</string>
     <!-- Accounts -->
-    <string name="auth_subtitle">Jelentkezz be, hogy a rekordjaid felkerüljenek a globális ranglistára. Játszani internet nélkül is tudsz.</string>
+    <string name="auth_subtitle">Fiókkal a rekordjaid felkerülnek a globális ranglistára. Játszani fiók és internet nélkül is tudsz.</string>
     <string name="auth_login">Belépés</string>
     <string name="auth_register">Regisztráció</string>
     <string name="auth_login_action">Belépek</string>
@@ -168,7 +168,6 @@
     <string name="settings_display">Megjelenítés</string>
     <string name="settings_blind_desc">Elrejti a megyék nevét és határait; csak az országhatár, a folyók és a tavak látszanak.</string>
     <string name="settings_account">Fiók</string>
-    <string name="settings_not_signed_in">Nem vagy bejelentkezve.</string>
     <string name="settings_delete">Fiók törlése</string>
     <string name="settings_delete_title">Biztosan törlöd a fiókodat?</string>
     <string name="settings_delete_text">A fiókod és a ranglistán szereplő összes eredményed véglegesen törlődik. Ezt nem lehet visszavonni. A megerősítéshez add meg a jelszavad.</string>
@@ -193,4 +192,9 @@
     <string name="game_lives">Életek: %1$d</string>
     <string name="result_title_out_of_lives">Elfogyott az életed!</string>
     <string name="result_label_lives">Megmaradt élet</string>
+    <string name="auth_play_as_guest">Játék vendégként</string>
+    <string name="auth_not_now">Most nem</string>
+    <string name="auth_sign_in_cta">Bejelentkezés vagy regisztráció</string>
+    <string name="results_guest_global">A globális ranglistán csak fiókkal szerepelhetsz. A rekordjaid ezen a telefonon így is megmaradnak.</string>
+    <string name="settings_guest">Vendégként játszol. Fiókkal a rekordjaid a globális ranglistára is felkerülnek.</string>
 </resources>

@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -40,7 +41,7 @@ private data class ScoreRow(val name: String, val score: Int, val timeMs: Long, 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResultsScreen(viewModel: ResultsViewModel = hiltViewModel()) {
+fun ResultsScreen(onSignIn: () -> Unit = {}, viewModel: ResultsViewModel = hiltViewModel()) {
     val mode by viewModel.mode.collectAsStateWithLifecycle()
     val tab by viewModel.tab.collectAsStateWithLifecycle()
     val player by viewModel.player.collectAsStateWithLifecycle()
@@ -90,7 +91,15 @@ fun ResultsScreen(viewModel: ResultsViewModel = hiltViewModel()) {
                 RecordsTab.Mine -> ScoreList(
                     personal.map { ScoreRow(it.playerName, it.score, it.timeMs, it.correct, it.total, highlight = false) },
                 )
-                RecordsTab.Global -> when (val g = global) {
+                RecordsTab.Global -> if (player == null && viewModel.canLogout) {
+                    // Guests: the leaderboard is only readable with an account.
+                    Centered {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Message(R.string.results_guest_global)
+                            Button(onClick = onSignIn) { Text(stringResource(R.string.auth_sign_in_cta)) }
+                        }
+                    }
+                } else when (val g = global) {
                     GlobalState.Idle, GlobalState.Loading -> Centered { CircularProgressIndicator() }
                     GlobalState.NotAvailable -> Centered { Message(R.string.records_global_offline) }
                     GlobalState.Error -> Centered {

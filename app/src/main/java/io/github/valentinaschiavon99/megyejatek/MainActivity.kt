@@ -2,6 +2,10 @@ package io.github.valentinaschiavon99.megyejatek
 
 import android.os.Bundle
 import android.os.SystemClock
+import androidx.compose.runtime.LaunchedEffect
+import io.github.valentinaschiavon99.megyejatek.core.data.prefs.Settings
+import io.github.valentinaschiavon99.megyejatek.core.data.prefs.SettingsRepository
+import kotlinx.coroutines.flow.map
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -45,6 +49,7 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var auth: AuthRepository
     @Inject lateinit var updates: UpdateChecker
+    @Inject lateinit var settings: SettingsRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -54,16 +59,22 @@ class MainActivity : ComponentActivity() {
                 // Saveable, so rotating the phone doesn't replay the intro.
                 var showIntro by rememberSaveable { mutableStateOf(true) }
                 val player by auth.player.collectAsStateWithLifecycle(initialValue = auth.currentPlayer)
+                // Null while DataStore loads (the intro covers it).
+                val onboardedFlow = remember { settings.settings.map<Settings, Boolean?> { it.onboarded } }
+                val onboarded by onboardedFlow.collectAsStateWithLifecycle(initialValue = null)
+                val scope = rememberCoroutineScope()
+                LaunchedEffect(player) { if (player != null) settings.setOnboarded() }
                 val screen = when {
-                    showIntro -> TopScreen.Intro
-                    // Without Firebase (offline build) there are no accounts: straight to the game.
-                    auth.isAvailable && player == null -> TopScreen.Auth
+                    showIntro || onboarded == null -> TopScreen.Intro
+                    // The account screen comes only on the very first start and can be skipped ("vendégként");
+                    // without Firebase (offline build) there are no accounts at all.
+                    auth.isAvailable && player == null && onboarded == false -> TopScreen.Auth
                     else -> TopScreen.App
                 }
                 Crossfade(targetState = screen, animationSpec = tween(400), label = "top") { s ->
                     when (s) {
                         TopScreen.Intro -> IntroScreen(onFinished = { showIntro = false })
-                        TopScreen.Auth -> AuthScreen()
+                        TopScreen.Auth -> AuthScreen(onSkip = { scope.launch { settings.setOnboarded() } }, skipAsGuest = true)
                         TopScreen.App -> AppNavHost()
                     }
                 }
@@ -76,7 +87,6 @@ class MainActivity : ComponentActivity() {
                 // Saveable, so rotating the phone neither re-checks nor brings back a dismissed dialog.
                 var dismissed by rememberSaveable { mutableStateOf(false) }
                 var lastCheck by rememberSaveable { mutableLongStateOf(0L) }
-                val scope = rememberCoroutineScope()
                 LifecycleEventEffect(Lifecycle.Event.ON_START) {
                     val now = SystemClock.elapsedRealtime()
                     if (lastCheck == 0L || now - lastCheck > UPDATE_CHECK_INTERVAL_MS) {

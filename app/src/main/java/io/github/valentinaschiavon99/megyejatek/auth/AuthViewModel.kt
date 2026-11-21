@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.valentinaschiavon99.megyejatek.core.auth.AuthError
 import io.github.valentinaschiavon99.megyejatek.core.auth.AuthRepository
+import io.github.valentinaschiavon99.megyejatek.core.auth.Player
 import io.github.valentinaschiavon99.megyejatek.core.auth.AuthResult
 import io.github.valentinaschiavon99.megyejatek.core.security.CredentialPolicy
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +45,8 @@ data class AuthUiState(
 class AuthViewModel @Inject constructor(
     private val auth: AuthRepository,
 ) : ViewModel() {
+
+    val player: StateFlow<Player?> = auth.player
 
     private val _state = MutableStateFlow(AuthUiState())
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
