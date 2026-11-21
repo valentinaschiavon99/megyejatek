@@ -10,6 +10,8 @@ import io.github.valentinaschiavon99.megyejatek.core.auth.AuthResult
 import io.github.valentinaschiavon99.megyejatek.core.security.CredentialPolicy
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -47,6 +49,7 @@ class AuthViewModel @Inject constructor(
 ) : ViewModel() {
 
     val player: StateFlow<Player?> = auth.player
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), auth.currentPlayer)
 
     private val _state = MutableStateFlow(AuthUiState())
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
