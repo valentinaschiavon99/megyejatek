@@ -36,7 +36,7 @@ import io.github.valentinaschiavon99.megyejatek.core.data.map.MapData
 import io.github.valentinaschiavon99.megyejatek.map.CountyVisual
 import io.github.valentinaschiavon99.megyejatek.map.HungaryMap
 import java.text.NumberFormat
-import java.util.Locale
+import androidx.compose.runtime.remember
 
 @Composable
 fun OverviewScreen(modePicker: @Composable () -> Unit = {}, viewModel: OverviewViewModel = hiltViewModel()) {
@@ -93,7 +93,8 @@ private fun InfoBar(
 ) {
     val county = countyId?.let { data.countyById[it] }
     val city = cityId?.let { data.cityById[it] }
-    val numbers = NumberFormat.getIntegerInstance(Locale.getDefault())
+    val locale = LocalConfiguration.current.locales[0]
+    val numbers = remember(locale) { NumberFormat.getIntegerInstance(locale) }
     Card(
         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
