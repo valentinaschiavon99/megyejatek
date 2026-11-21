@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/valentinaschiavon99/megyejatek/releases/download/latest/megyejatek-debug.apk"><img src="https://img.shields.io/badge/Download-APK-E09A2D?style=for-the-badge&logo=android&logoColor=white" alt="Download the APK"></a>
+  <a href="https://github.com/valentinaschiavon99/megyejatek/releases/download/latest/megyejatek.apk"><img src="https://img.shields.io/badge/Download-APK-E09A2D?style=for-the-badge&logo=android&logoColor=white" alt="Download the APK"></a>
   <a href="https://github.com/valentinaschiavon99/megyejatek/actions/workflows/android.yml"><img src="https://github.com/valentinaschiavon99/megyejatek/actions/workflows/android.yml/badge.svg" alt="Android build"></a>
   <a href="https://github.com/valentinaschiavon99/megyejatek/actions/workflows/codeql.yml"><img src="https://github.com/valentinaschiavon99/megyejatek/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
   <img src="https://img.shields.io/badge/license-MIT-1B2A44" alt="MIT licence">
@@ -44,8 +44,10 @@ Written from scratch in Kotlin with Jetpack Compose. Map and city data come from
 
 ## Install the latest build
 
-Every push to `main` is built by GitHub Actions. Download the debug APK on your phone and open it:
-[megyejatek-debug.apk](https://github.com/valentinaschiavon99/megyejatek/releases/download/latest/megyejatek-debug.apk)
+Every push to `main` is built by GitHub Actions. Download the APK on your phone and open it:
+[megyejatek.apk](https://github.com/valentinaschiavon99/megyejatek/releases/download/latest/megyejatek.apk)
+(the signed, optimised release build; `megyejatek-debug.apk` and the Play bundle `megyejatek.aab` are next to it).
+If you installed an older debug build, uninstall it once first: the signing key changed.
 (Android asks once to allow installs from your browser.)
 
 ## Build
