@@ -67,6 +67,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { _update.value = UpdateUi.Done(updates.check()) }
     }
 
+    val sound: StateFlow<Boolean> = settings.settings.map { it.sound }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    fun setSound(enabled: Boolean) {
+        viewModelScope.launch { settings.setSound(enabled) }
+    }
+
     fun setBlindMap(enabled: Boolean) {
         viewModelScope.launch { settings.setBlindMap(enabled) }
     }

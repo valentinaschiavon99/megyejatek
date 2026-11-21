@@ -4,6 +4,8 @@ import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.valentinaschiavon99.megyejatek.core.audio.Sound
+import io.github.valentinaschiavon99.megyejatek.core.audio.SoundPlayer
 import io.github.valentinaschiavon99.megyejatek.core.auth.AuthRepository
 import io.github.valentinaschiavon99.megyejatek.core.data.map.MapData
 import io.github.valentinaschiavon99.megyejatek.core.data.map.MapRepository
@@ -118,6 +120,7 @@ class GameViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val auth: AuthRepository,
     private val scores: ScoresRepository,
+    private val sounds: SoundPlayer,
 ) : ViewModel() {
 
     private val config = ScoringConfig.Default
@@ -210,11 +213,13 @@ class GameViewModel @Inject constructor(
         when (result) {
             is TapResult.Correct -> {
                 _events.tryEmit(GameEvent.Correct)
+                if (!next.finished) sounds.play(Sound.Correct)
                 _state.update { it.copy(award = Award(result.points, ++awardIds)) }
                 clearFlash(result.answerId) // a running hint flash must not hide the green
             }
             is TapResult.Wrong -> {
                 _events.tryEmit(GameEvent.Wrong)
+                sounds.play(Sound.Wrong)
                 flash(result.tappedId, CountyVisual.Wrong, 600)
             }
             is TapResult.OutOfLives -> {
@@ -241,6 +246,7 @@ class GameViewModel @Inject constructor(
         val (next, result) = RoundRules.guess(round, km, config)
         if (result !is TapResult.Guess) return
         _events.tryEmit(if (result.good) GameEvent.Correct else GameEvent.Wrong)
+        if (!next.finished) sounds.play(if (result.good) Sound.Correct else Sound.Wrong)
         clearAllFlashes()
         _state.update {
             it.copy(
@@ -285,6 +291,7 @@ class GameViewModel @Inject constructor(
                 it.copy(elapsedMs = elapsed, newRecord = !round.gaveUp && round.score > 0 && round.score > (previousBest ?: 0))
             }
             _events.tryEmit(GameEvent.Finished)
+            sounds.play(if (round.gaveUp || round.outOfLives) Sound.Lose else Sound.Finish)
             saveResult(round, elapsed)
         }
         _state.update {

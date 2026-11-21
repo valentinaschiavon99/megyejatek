@@ -53,6 +53,7 @@ import io.github.valentinaschiavon99.megyejatek.core.update.UpdateStatus
 fun SettingsScreen(onSignIn: () -> Unit = {}, viewModel: SettingsViewModel = hiltViewModel()) {
     val player by viewModel.player.collectAsStateWithLifecycle()
     val blind by viewModel.blindMap.collectAsStateWithLifecycle()
+    val sound by viewModel.sound.collectAsStateWithLifecycle()
     val update by viewModel.update.collectAsStateWithLifecycle()
     val delete by viewModel.delete.collectAsStateWithLifecycle()
     val uri = LocalUriHandler.current
@@ -109,6 +110,13 @@ fun SettingsScreen(onSignIn: () -> Unit = {}, viewModel: SettingsViewModel = hil
                     Text(stringResource(R.string.settings_blind_desc), style = MaterialTheme.typography.bodySmall)
                 }
                 Switch(checked = blind, onCheckedChange = viewModel::setBlindMap)
+            }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.settings_sound))
+                    Text(stringResource(R.string.settings_sound_desc), style = MaterialTheme.typography.bodySmall)
+                }
+                Switch(checked = sound, onCheckedChange = viewModel::setSound, modifier = Modifier.testTag("sound-switch"))
             }
         }
 
