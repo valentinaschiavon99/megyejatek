@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.valentinaschiavon99.megyejatek.R
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.label
 import io.github.valentinaschiavon99.megyejatek.game.ui.formatTime
 
 private data class ScoreRow(val name: String, val score: Int, val timeMs: Long, val correct: Int, val total: Int, val highlight: Boolean)
@@ -75,7 +76,7 @@ fun ResultsScreen(onSignIn: () -> Unit = {}, viewModel: ResultsViewModel = hiltV
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             for (m in viewModel.modes) {
-                FilterChip(selected = m == mode, onClick = { viewModel.selectMode(m) }, label = { Text(m.title) })
+                FilterChip(selected = m == mode, onClick = { viewModel.selectMode(m) }, label = { Text(m.label()) })
             }
         }
 

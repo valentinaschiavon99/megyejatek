@@ -11,7 +11,7 @@
 
 # Megyejáték
 
-An Android quiz about Hungary's 19 counties and Budapest: find counties, seats, neighbours and cities on a blind map. The UI is in Hungarian. *A game made by Tina.*
+An Android quiz about Hungary's 19 counties and Budapest: find counties, seats, neighbours and cities on a blind map. In Hungarian and English (it follows the phone's language, or pick one in Settings). *A game made by Tina.*
 
 Written from scratch in Kotlin with Jetpack Compose. Map and city data come from open sources (see [DATA_SOURCES.md](DATA_SOURCES.md)).
 

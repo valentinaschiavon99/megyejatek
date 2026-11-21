@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.valentinaschiavon99.megyejatek.R
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.displayName
 import io.github.valentinaschiavon99.megyejatek.core.data.map.County
 import io.github.valentinaschiavon99.megyejatek.core.data.map.MapData
 import io.github.valentinaschiavon99.megyejatek.map.CountyVisual
@@ -59,8 +60,8 @@ import java.util.Locale
 enum class InfoPage { Megye, Faq, Sources }
 
 private val hungarian: Locale = Locale.forLanguageTag("hu")
-private fun formatInt(n: Int): String = NumberFormat.getIntegerInstance(hungarian).format(n)
-private fun County.displayName(): String = if (info.isCapital) name else "$name megye"
+/** Digit grouping of the app language ("12 345" in Hungarian, "12,345" in English). */
+private fun formatInt(n: Int): String = NumberFormat.getIntegerInstance(Locale.getDefault()).format(n)
 
 /** Waits for the map data, then shows [content]. */
 @Composable

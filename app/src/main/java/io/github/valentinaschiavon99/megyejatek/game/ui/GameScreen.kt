@@ -73,6 +73,7 @@ import io.github.valentinaschiavon99.megyejatek.core.ui.components.SlidingText
 import io.github.valentinaschiavon99.megyejatek.core.ui.components.StarRating
 import io.github.valentinaschiavon99.megyejatek.core.ui.components.StatPill
 import io.github.valentinaschiavon99.megyejatek.core.ui.components.icon
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.label
 import io.github.valentinaschiavon99.megyejatek.game.engine.GameMode
 import io.github.valentinaschiavon99.megyejatek.game.engine.PromptKind
 import io.github.valentinaschiavon99.megyejatek.game.engine.Question
@@ -253,9 +254,10 @@ private fun GameHeader(state: GameUiState, blindMap: Boolean, onBlindMapChange: 
 @Composable
 private fun promptTexts(data: MapData, round: RoundState, q: Question): Pair<String, String> {
     val progress = stringResource(R.string.game_progress, round.index + 1, round.total)
+    val countyFormat = stringResource(R.string.county_display)
     fun countyName(id: String): String {
         val c = data.countyById[id] ?: return id
-        return if (c.info.isCapital) c.name else "${c.name} megye"
+        return if (c.info.isCapital) c.name else countyFormat.format(c.name)
     }
     return when (q.kind) {
         PromptKind.FindCounty ->
@@ -365,7 +367,7 @@ private fun StartCard(mode: GameMode, best: Int?, onNewGame: () -> Unit, modifie
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             IconBadge(mode.icon, size = if (compact) 52.dp else 72.dp)
-            Text(mode.title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("start-title"))
+            Text(mode.label(), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("start-title"))
             Text(stringResource(mode.helpText()), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
             if (!compact) {
                 Text(

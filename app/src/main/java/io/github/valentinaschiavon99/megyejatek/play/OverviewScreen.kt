@@ -93,7 +93,7 @@ private fun InfoBar(
 ) {
     val county = countyId?.let { data.countyById[it] }
     val city = cityId?.let { data.cityById[it] }
-    val numbers = NumberFormat.getIntegerInstance(Locale.forLanguageTag("hu"))
+    val numbers = NumberFormat.getIntegerInstance(Locale.getDefault())
     Card(
         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),

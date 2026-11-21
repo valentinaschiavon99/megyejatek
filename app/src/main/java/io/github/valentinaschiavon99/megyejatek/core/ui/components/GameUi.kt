@@ -56,6 +56,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
+import io.github.valentinaschiavon99.megyejatek.R
+import io.github.valentinaschiavon99.megyejatek.core.data.map.County
 import io.github.valentinaschiavon99.megyejatek.core.ui.theme.LocalMapColors
 import io.github.valentinaschiavon99.megyejatek.game.engine.GameMode
 import kotlinx.coroutines.delay
@@ -72,6 +76,25 @@ val GameMode.icon: ImageVector
         GameMode.Felsorolas -> Icons.Outlined.LinearScale
         GameMode.Attekintes -> Icons.Outlined.Explore
     }
+
+@get:StringRes
+val GameMode.titleRes: Int
+    get() = when (this) {
+        GameMode.Megyek -> R.string.mode_megyek
+        GameMode.Szekhelyek -> R.string.mode_szekhelyek
+        GameMode.Szomszedok -> R.string.mode_szomszedok
+        GameMode.Varosok -> R.string.mode_varosok
+        GameMode.Felsorolas -> R.string.mode_felsorolas
+        GameMode.Attekintes -> R.string.mode_attekintes
+    }
+
+/** The mode's name in the app's language. */
+@Composable
+fun GameMode.label(): String = stringResource(titleRes)
+
+/** "Zala megye" / "Zala County"; Budapest stays "Budapest". */
+@Composable
+fun County.displayName(): String = if (info.isCapital) name else stringResource(R.string.county_display, name)
 
 /** A rounded pill with an icon and a short value, used in the game header. */
 @Composable

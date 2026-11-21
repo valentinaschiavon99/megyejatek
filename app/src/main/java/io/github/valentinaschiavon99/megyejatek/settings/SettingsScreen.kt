@@ -1,5 +1,17 @@
 package io.github.valentinaschiavon99.megyejatek.settings
 
+import android.app.LocaleManager
+import android.os.Build
+import android.os.LocaleList
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.RadioButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,9 +35,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -85,6 +94,11 @@ fun SettingsScreen(onSignIn: () -> Unit = {}, viewModel: SettingsViewModel = hil
             OutlinedButton(onClick = viewModel::checkForUpdate, enabled = update != UpdateUi.Checking) {
                 Text(stringResource(R.string.settings_check_update))
             }
+        }
+
+        // ---- language (Android 13+ has per-app languages; older phones follow the system) ----
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Section(stringResource(R.string.settings_language)) { LanguagePicker() }
         }
 
         // ---- display ----
@@ -196,3 +210,35 @@ private fun DeleteDialog(state: DeleteUi, onConfirm: (String) -> Unit, onCancel:
 }
 
 private const val PRIVACY_URL = "https://github.com/valentinaschiavon99/megyejatek/blob/main/PRIVACY.md"
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+@Composable
+private fun LanguagePicker() {
+    val locales = LocalContext.current.getSystemService(LocaleManager::class.java)
+    var current by remember { mutableStateOf(locales.applicationLocales.toLanguageTags()) }
+    val options = listOf(
+        "" to stringResource(R.string.language_system),
+        "hu" to stringResource(R.string.language_hu),
+        "en" to stringResource(R.string.language_en),
+    )
+    Column(Modifier.selectableGroup()) {
+        for ((tag, label) in options) {
+            val selected = current.substringBefore('-') == tag
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .selectable(selected = selected, role = Role.RadioButton) {
+                        current = tag
+                        // The activity is recreated in the new language; nothing else to do.
+                        locales.applicationLocales =
+                            if (tag.isEmpty()) LocaleList.getEmptyLocaleList() else LocaleList.forLanguageTags(tag)
+                    }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(selected = selected, onClick = null)
+                Text(label, modifier = Modifier.padding(start = 12.dp))
+            }
+        }
+    }
+}

@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.valentinaschiavon99.megyejatek.R
 import io.github.valentinaschiavon99.megyejatek.core.ui.components.icon
+import io.github.valentinaschiavon99.megyejatek.core.ui.components.label
 import io.github.valentinaschiavon99.megyejatek.game.engine.GameMode
 import io.github.valentinaschiavon99.megyejatek.game.ui.GameScreen
 
@@ -65,7 +66,7 @@ fun ModeChips(selected: GameMode, onSelect: (GameMode) -> Unit, modifier: Modifi
                 selected = m == selected,
                 onClick = { onSelect(m) },
                 enabled = m.implemented,
-                label = { Text(m.title, style = MaterialTheme.typography.labelLarge) },
+                label = { Text(m.label(), style = MaterialTheme.typography.labelLarge) },
                 leadingIcon = { Icon(m.icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 shape = MaterialTheme.shapes.extraLarge,
                 colors = FilterChipDefaults.filterChipColors(
