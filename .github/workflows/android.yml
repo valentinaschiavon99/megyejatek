@@ -75,7 +75,8 @@ jobs:
         env:
           MEGYEJATEK_KEYSTORE_PASSWORD: ${{ secrets.MEGYEJATEK_KEYSTORE_PASSWORD }}
           MEGYEJATEK_KEY_ALIAS: ${{ secrets.MEGYEJATEK_KEY_ALIAS }}
-          MEGYEJATEK_KEY_PASSWORD: ${{ secrets.MEGYEJATEK_KEY_PASSWORD }}
+          # PKCS12 keystores use one password for the store and the key.
+          MEGYEJATEK_KEY_PASSWORD: ${{ secrets.MEGYEJATEK_KEYSTORE_PASSWORD }}
         run: >
           ./gradlew assembleDebug assembleRelease bundleRelease assembleDebugAndroidTest testDebugUnitTest --stacktrace
           -PversionCode=${{ github.run_number }} -PgitSha=${{ github.sha }}

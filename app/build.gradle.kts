@@ -24,7 +24,7 @@ if (hasFirebaseConfig) {
  * never from the repo. Without them the release build is simply left unsigned.
  */
 fun secret(name: String): String? =
-    providers.environmentVariable(name).orElse(providers.gradleProperty(name)).orNull?.takeIf { it.isNotBlank() }
+    providers.environmentVariable(name).orElse(providers.gradleProperty(name)).orNull?.trim()?.takeIf { it.isNotEmpty() }
 
 val releaseKeystore = secret("MEGYEJATEK_KEYSTORE_PATH")
 
@@ -73,7 +73,7 @@ android {
                 storeFile = file(releaseKeystore)
                 storePassword = secret("MEGYEJATEK_KEYSTORE_PASSWORD")
                 keyAlias = secret("MEGYEJATEK_KEY_ALIAS")
-                keyPassword = secret("MEGYEJATEK_KEY_PASSWORD")
+                keyPassword = secret("MEGYEJATEK_KEY_PASSWORD") ?: secret("MEGYEJATEK_KEYSTORE_PASSWORD")
                 enableV3Signing = true
             }
         }
