@@ -40,5 +40,5 @@ Without `google-services.json` the app is built offline-only, with no accounts a
 
 ## Known limits
 
-- **App Check is not enforced.** Play Integrity only vouches for apps installed from Google Play, and this APK is distributed through GitHub. The Firestore rules are the line of defence; a determined player could still post a plausible fake score through the API.
+- **App Check is integrated but not yet enforced.** Release builds attest with Play Integrity, debug builds with the App Check debug provider, and every Auth and Firestore request carries the token. Play Integrity needs the Firebase project linked in the Play Console, so enforcement in the Firebase console is switched on only once the app is on Google Play and the App Check metrics show that genuine players pass. The registration does not require `PLAY_RECOGNIZED`, so the APK from GitHub can pass too on a device with integrity. Until enforcement, the Firestore rules are the line of defence; a determined player could still post a plausible fake score through the API.
 - **No password reset**, because there is no e-mail address. Players should use a password manager.
